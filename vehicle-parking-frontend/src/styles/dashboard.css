@@ -1,0 +1,94 @@
+/* Dashboard Styles */
+
+.dashboard-stat-card {
+  transition: transform 0.3s ease;
+}
+
+.dashboard-stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.chart-container {
+  height: 400px;
+  width: 100%;
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+}
+
+.trend-badge {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.trend-badge.up {
+  background-color: rgba(56, 203, 137, 0.1);
+  color: #38CB89;
+}
+
+.trend-badge.down {
+  background-color: rgba(255, 86, 48, 0.1);
+  color: #FF5630;
+}
+
+/* Table styles */
+.data-table {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.data-table th {
+  font-weight: 600;
+  color: #6B778C;
+  background-color: #F9FAFB;
+}
+
+.data-table td {
+  padding: 16px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.status-chip {
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-chip.pending {
+  background-color: rgba(255, 171, 0, 0.1);
+  color: #FFAB00;
+}
+
+.status-chip.approved {
+  background-color: rgba(56, 203, 137, 0.1);
+  color: #38CB89;
+}
+
+.status-chip.in-progress {
+  background-color: rgba(38, 132, 255, 0.1);
+  color: #2684FF;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .stats-container {
+    flex-direction: column;
+  }
+  
+  .chart-container {
+    height: 300px;
+  }
+} 

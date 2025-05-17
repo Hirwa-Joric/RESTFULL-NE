@@ -1,0 +1,1356 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Alright, team! We're embarking on the development of "The Vehicle Parking Management System." I'm taking the lead as Project Manager, and my role is to ensure we build a robust, scalable, and user-friendly RESTful application. I will provide a detailed blueprint for our AI coding agent to follow.
+
+Project Vision:
+To create a seamless and efficient web platform for managing vehicle parking slots, catering to both vehicle owners (Users) and parking facility managers (Admins). The system will facilitate user registration, vehicle management, parking slot requests, and admin oversight of allocations and system operations.
+
+Target User Roles:
+
+Regular User (Vehicle Owner): Can register, log in, manage their vehicles, view available parking slots, request parking slots, and view their booking history.
+
+Admin (Parking Facility Manager): Can manage users (approve registrations, view/deactivate users), manage parking slots (add, edit, view status), manage parking requests (approve/reject), view overall system statistics, and configure system settings (e.g., parking rates if we extend later).
+
+I. Core Architecture & Technology Stack
+
+Architecture Style: RESTful API for backend, Single Page Application (SPA) for frontend.
+
+Frontend:
+
+Framework/Library: React (v18+)
+
+State Management: Redux Toolkit (for predictable state management and easy async logic with createAsyncThunk)
+
+Routing: React Router (v6+)
+
+UI Component Library: Material-UI (MUI v5+) for a professional look, accessibility, and pre-built components.
+
+HTTP Client: Axios (for making API requests)
+
+Form Handling: Formik with Yup for validation (or React Hook Form)
+
+Styling: MUI's built-in styling solution (Emotion/Styled Components) or CSS Modules.
+
+Build Tool: Vite (for faster development builds and optimized production builds)
+
+Backend:
+
+Language/Framework: Node.js (LTS version) with Express.js
+
+Database: PostgreSQL (Relational, robust, good for structured data and potential GIS features later)
+
+ORM/Query Builder: Sequelize (for interacting with PostgreSQL)
+
+Authentication: JSON Web Tokens (JWT)
+
+Password Hashing: bcrypt.js
+
+Validation: Joi or express-validator
+
+API Documentation (Self-documenting): Swagger/OpenAPI with swagger-jsdoc and swagger-ui-express.
+
+Version Control: Git (repository on GitHub/GitLab/Bitbucket)
+
+Development Environment: Docker & Docker Compose (to ensure consistent environments for DB, backend, and potentially frontend dev server).
+
+II. Backend Development Instructions (for the AI Coding Agent)
+
+A. Project Setup & Structure (Node.js/Express.js)
+
+Initialize a Node.js project: npm init -y
+
+Install core dependencies: express, pg, sequelize, jsonwebtoken, bcryptjs, cors, dotenv, joi (or express-validator), helmet, morgan.
+
+Install dev dependencies: nodemon, eslint, prettier, swagger-jsdoc, swagger-ui-express.
+
+Folder Structure:
+
+/project-root
+|-- /src
+|   |-- /config             # Database, JWT secret, environment variables
+|   |-- /controllers        # Request handlers, business logic
+|   |-- /middlewares        # Auth, error handling, validation
+|   |-- /models             # Sequelize models (DB schema)
+|   |-- /routes             # API route definitions
+|   |-- /services           # Business logic separated from controllers (optional, for complex logic)
+|   |-- /utils              # Helper functions (e.g., password utils, token utils)
+|   |-- app.js              # Express app setup
+|   |-- server.js           # HTTP server startup
+|-- .env                    # Environment variables (PORT, DB_URL, JWT_SECRET, etc.)
+|-- .eslintrc.js
+|-- .prettierrc.js
+|-- package.json
+|-- Dockerfile
+|-- docker-compose.yml
+
+
+Environment Configuration: Use dotenv to manage environment variables (PORT, DATABASE_URL, JWT_SECRET, JWT_EXPIRES_IN).
+
+B. Database Schema (PostgreSQL with Sequelize Models)
+
+Users Table:
+
+id: UUID (Primary Key, auto-generated)
+
+firstName: STRING, allowNull: false
+
+lastName: STRING, allowNull: false
+
+email: STRING, allowNull: false, unique: true, isEmail: true
+
+password: STRING, allowNull: false (store hashed password)
+
+role: ENUM('user', 'admin'), defaultValue: 'user'
+
+status: ENUM('pending_approval', 'active', 'suspended'), defaultValue: 'pending_approval'
+
+createdAt: DATE
+
+updatedAt: DATE
+
+Vehicles Table:
+
+id: UUID (Primary Key, auto-generated)
+
+userId: UUID (Foreign Key to Users.id, onDelete: 'CASCADE')
+
+licensePlate: STRING, allowNull: false, unique: true
+
+make: STRING
+
+model: STRING
+
+color: STRING
+
+type: ENUM('car', 'motorcycle', 'van', 'electric_car'), defaultValue: 'car'
+
+createdAt: DATE
+
+updatedAt: DATE
+
+Associations: User.hasMany(Vehicle), Vehicle.belongsTo(User)
+
+ParkingSlots Table:
+
+id: UUID (Primary Key, auto-generated)
+
+slotNumber: STRING, allowNull: false, unique: true (e.g., "A101", "P2-05")
+
+locationDescription: STRING (e.g., "Level 1, North Wing")
+
+type: ENUM('car', 'motorcycle', 'van', 'electric_car', 'disabled'), defaultValue: 'car' (slot type compatibility)
+
+status: ENUM('available', 'occupied', 'reserved', 'maintenance'), defaultValue: 'available'
+
+isEVChargingAvailable: BOOLEAN, defaultValue: false
+
+createdAt: DATE
+
+updatedAt: DATE
+
+Bookings Table:
+
+id: UUID (Primary Key, auto-generated)
+
+userId: UUID (Foreign Key to Users.id)
+
+vehicleId: UUID (Foreign Key to Vehicles.id)
+
+slotId: UUID (Foreign Key to ParkingSlots.id, nullable initially, assigned upon admin approval)
+
+requestedStartTime: DATE, allowNull: false
+
+requestedEndTime: DATE, allowNull: false
+
+actualCheckInTime: DATE (nullable)
+
+actualCheckOutTime: DATE (nullable)
+
+status: ENUM('pending_approval', 'confirmed', 'rejected', 'cancelled_by_user', 'cancelled_by_admin', 'active_parking', 'completed'), defaultValue: 'pending_approval'
+
+notes: TEXT (optional, user notes for request)
+
+adminRemarks: TEXT (optional, admin notes for approval/rejection)
+
+createdAt: DATE
+
+updatedAt: DATE
+
+Associations: User.hasMany(Booking), Booking.belongsTo(User), Vehicle.hasMany(Booking), Booking.belongsTo(Vehicle), ParkingSlot.hasMany(Booking), Booking.belongsTo(ParkingSlot)
+
+C. API Endpoints & Logic
+
+Authentication (/api/auth)
+
+POST /register:
+
+Request Body: firstName, lastName, email, password
+
+Logic: Validate input. Check if email exists. Hash password using bcrypt. Create user with status: 'pending_approval'.
+
+Response: Success message (e.g., "Registration successful, awaiting admin approval").
+
+POST /login:
+
+Request Body: email, password
+
+Logic: Validate input. Find user by email. If user exists and status === 'active', compare password using bcrypt. If valid, generate JWT (payload: userId, role).
+
+Response: { token, user: { id, firstName, lastName, email, role } } or error.
+
+GET /me (Protected: User, Admin):
+
+Logic: Get user details from JWT.
+
+Response: { user: { id, firstName, lastName, email, role } }
+
+User Management (/api/users) - Admin Only
+
+GET /pending-approvals (Protected: Admin):
+
+Logic: Fetch all users with status: 'pending_approval'.
+
+Response: Array of user objects.
+
+PUT /:userId/approve (Protected: Admin):
+
+Logic: Find user by userId. Update status to 'active'.
+
+Response: Success message or updated user object.
+
+PUT /:userId/reject (Protected: Admin):
+
+Logic: Find user by userId. Update status to 'suspended' (or delete, decide policy).
+
+Response: Success message.
+
+GET / (Protected: Admin):
+
+Logic: Fetch all users (with pagination).
+
+Response: Array of user objects.
+
+GET /:userId (Protected: Admin):
+
+Logic: Fetch specific user.
+
+Response: User object.
+
+PUT /:userId (Protected: Admin):
+
+Request Body: Fields to update (e.g., firstName, lastName, role, status)
+
+Logic: Update user details.
+
+Response: Updated user object.
+
+DELETE /:userId (Protected: Admin):
+
+Logic: Soft delete or hard delete user (consider implications for bookings). Soft delete (set status: 'suspended') is safer.
+
+Response: Success message.
+
+Vehicle Management (/api/vehicles) - User Role
+
+POST / (Protected: User):
+
+Request Body: licensePlate, make, model, color, type
+
+Logic: Validate input. Create vehicle associated with req.user.id.
+
+Response: Created vehicle object.
+
+GET / (Protected: User):
+
+Logic: Fetch all vehicles for req.user.id.
+
+Response: Array of vehicle objects.
+
+GET /:vehicleId (Protected: User - ensure vehicle belongs to user):
+
+Logic: Fetch specific vehicle.
+
+Response: Vehicle object.
+
+PUT /:vehicleId (Protected: User - ensure vehicle belongs to user):
+
+Request Body: Fields to update.
+
+Logic: Update vehicle.
+
+Response: Updated vehicle object.
+
+DELETE /:vehicleId (Protected: User - ensure vehicle belongs to user):
+
+Logic: Delete vehicle.
+
+Response: Success message.
+
+Parking Slot Management (/api/slots) - Admin Only
+
+POST / (Protected: Admin):
+
+Request Body: slotNumber, locationDescription, type, isEVChargingAvailable
+
+Logic: Validate input. Create new parking slot with status: 'available'.
+
+Response: Created slot object.
+
+GET / (Protected: Admin, User - for users, only show 'available' or filter by request criteria):
+
+Logic: Fetch all slots. Admins see all, users see available or based on search. Add query params for filtering (status, type).
+
+Response: Array of slot objects.
+
+GET /:slotId (Protected: Admin):
+
+Logic: Fetch specific slot.
+
+Response: Slot object.
+
+PUT /:slotId (Protected: Admin):
+
+Request Body: Fields to update (locationDescription, type, status, isEVChargingAvailable).
+
+Logic: Update slot.
+
+Response: Updated slot object.
+
+DELETE /:slotId (Protected: Admin):
+
+Logic: Delete slot (only if no active/pending bookings). Or mark as status: 'maintenance' indefinitely.
+
+Response: Success message.
+
+Booking Management (/api/bookings)
+
+POST /request (Protected: User):
+
+Request Body: vehicleId, requestedStartTime, requestedEndTime, notes (optional)
+
+Logic:
+
+Validate input (ensure vehicleId belongs to user, times are valid).
+
+Check for overlapping pending or confirmed bookings for the user or vehicle.
+
+Create booking with status: 'pending_approval', userId from req.user.id.
+
+Response: Created booking object.
+
+GET /my-bookings (Protected: User):
+
+Logic: Fetch all bookings for req.user.id, order by createdAt descending.
+
+Response: Array of booking objects (include vehicle and slot details).
+
+PUT /:bookingId/cancel-by-user (Protected: User - ensure booking belongs to user):
+
+Logic:
+
+Check if booking status allows cancellation (e.g., only pending_approval or confirmed if before a certain time).
+
+Update booking status to 'cancelled_by_user'.
+
+If booking was confirmed and had a slotId, update ParkingSlots.status for that slot to 'available' if no other overlapping confirmed bookings exist for that slot.
+
+Response: Updated booking object.
+
+GET /admin/all (Protected: Admin):
+
+Logic: Fetch all bookings (with pagination, filtering by status, userId, date range). Include user, vehicle, slot details.
+
+Response: Array of booking objects.
+
+GET /admin/pending-approval (Protected: Admin):
+
+Logic: Fetch all bookings with status: 'pending_approval'. Include user and vehicle details.
+
+Response: Array of booking objects.
+
+PUT /admin/:bookingId/approve (Protected: Admin):
+Request Body: slotId, adminRemarks (optional)
+
+Logic:
+
+Validate slotId (exists, is available for the booking type and requested time).
+
+Check for slot conflicts for the requestedStartTime and requestedEndTime for the chosen slotId.
+
+Update booking: status: 'confirmed', assign slotId, adminRemarks.
+
+Update ParkingSlots.status for the assigned slotId to 'reserved' or 'occupied' based on booking time.
+
+Response: Updated booking object.
+
+PUT /admin/:bookingId/reject (Protected: Admin):
+
+Request Body: adminRemarks (required)
+
+Logic: Update booking status to 'rejected', adminRemarks.
+
+Response: Updated booking object.
+
+PUT /admin/:bookingId/cancel-by-admin (Protected: Admin):
+
+Request Body: adminRemarks (required)
+
+Logic:
+
+Update booking status to 'cancelled_by_admin', adminRemarks.
+
+If booking was confirmed and had a slotId, update ParkingSlots.status for that slot to 'available' if no other overlapping confirmed bookings exist for that slot.
+
+Response: Updated booking object.
+
+POST /admin/:bookingId/check-in (Protected: Admin):
+
+Logic:
+
+For a confirmed booking.
+
+Update booking: status: 'active_parking', actualCheckInTime: new Date().
+
+Update ParkingSlots.status for the assigned slotId to 'occupied'.
+
+Response: Updated booking object.
+
+POST /admin/:bookingId/check-out (Protected: Admin):
+
+Logic:
+
+For an active_parking booking.
+
+Update booking: status: 'completed', actualCheckOutTime: new Date().
+
+Calculate parking duration and fee (if applicable in future).
+
+Update ParkingSlots.status for the assigned slotId to 'available' (if no other immediate upcoming reservation).
+
+Response: Updated booking object.
+
+D. Middleware
+
+Authentication Middleware (isAuthenticated):
+
+Verify JWT from Authorization header (Bearer <token>).
+
+If valid, attach req.user = { userId, role } to the request object.
+
+If invalid, return 401 Unauthorized.
+
+Authorization Middleware (isAdmin, isUser):
+
+Check req.user.role against required role(s).
+
+If not authorized, return 403 Forbidden.
+
+Validation Middleware:
+
+Use Joi or express-validator schemas to validate request bodies and query params.
+
+If validation fails, return 400 Bad Request with error details.
+
+Global Error Handler:
+
+Catches errors passed via next(error).
+
+Sends standardized JSON error responses (e.g., { statusCode, message, errors: [] }).
+
+Handles Sequelize validation errors, unique constraint errors, etc.
+
+Other Middlewares:
+
+cors(): Enable Cross-Origin Resource Sharing.
+
+express.json(): Parse JSON request bodies.
+
+express.urlencoded({ extended: true }): Parse URL-encoded bodies.
+
+helmet(): Basic security headers.
+
+morgan('dev'): HTTP request logging (for development).
+
+E. Security Considerations
+
+Password Hashing: Use bcrypt.js with a sufficient salt round.
+
+JWT Security: Use strong JWT_SECRET, short expiry times for access tokens, consider refresh tokens for longer sessions. Store JWTs securely on the client (HttpOnly cookies are best, or localStorage with care).
+
+Input Validation: Validate ALL inputs on the backend, even if validated on the frontend.
+
+SQL Injection Prevention: Use an ORM (Sequelize) which helps prevent SQL injection by using parameterized queries.
+
+XSS Prevention: Set appropriate Content Security Policy (CSP) headers. React inherently helps by escaping JSX content.
+
+Rate Limiting: Implement rate limiting on sensitive endpoints (login, register) to prevent brute-force attacks.
+
+HTTPS: Always use HTTPS in production.
+
+III. Frontend Development Instructions (for the AI Coding Agent)
+
+A. Project Setup & Structure (React with Vite + MUI + Redux Toolkit)
+
+Initialize React project: npm create vite@latest vehicle-parking-frontend -- --template react-ts (using TypeScript is recommended for larger projects, or react for JavaScript).
+
+Install dependencies: react-router-dom, @reduxjs/toolkit, react-redux, axios, @mui/material, @emotion/react, @emotion/styled, @mui/icons-material, formik, yup, react-toastify (for notifications).
+
+Folder Structure:
+
+/vehicle-parking-frontend
+|-- /public
+|-- /src
+|   |-- /app                # Redux store setup, root component
+|   |   |-- store.js
+|   |-- /assets             # Images, fonts, etc.
+|   |-- /components         # Reusable UI components (e.g., Button, Modal, DataTable)
+|   |   |-- /common
+|   |   |-- /layout         # (Navbar, Sidebar, Footer)
+|   |-- /features           # Feature-specific components, slices, services
+|   |   |-- /auth           # Login, Register components, authSlice.js, authService.js
+|   |   |-- /vehicles
+|   |   |-- /bookings
+|   |   |-- /admin          # Admin specific features (user mgt, slot mgt)
+|   |-- /hooks              # Custom React hooks
+|   |-- /pages              # Top-level route components
+|   |-- /services           # API service configurations (e.g., Axios instance setup)
+|   |-- /styles             # Global styles, theme configuration
+|   |-- /utils              # Helper functions
+|   |-- App.jsx             # Main App component with routing
+|   |-- main.jsx            # Entry point, Redux Provider, Router Provider
+|-- .env.development        # Dev environment variables (e.g., VITE_API_BASE_URL)
+|-- .env.production         # Prod environment variables
+|-- vite.config.js
+|-- package.json
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+IGNORE_WHEN_COPYING_END
+
+B. Core Setup
+
+Redux Store (src/app/store.js):
+
+Configure store using configureStore from Redux Toolkit.
+
+Combine reducers from feature slices.
+
+Setup middleware (e.g., thunk is included by default).
+
+API Service (src/services/api.js or feature-specific services):
+
+Create an Axios instance with baseURL from environment variables.
+
+Add an interceptor to include JWT in Authorization header for authenticated requests.
+
+Add an interceptor to handle global API errors (e.g., 401 for logout).
+
+Routing (src/App.jsx or a dedicated Routes.jsx):
+
+Use BrowserRouter, Routes, Route from react-router-dom.
+
+Define public routes (Login, Register, Home).
+
+Define protected routes using a ProtectedRoute component that checks authentication status (from Redux state).
+
+Define role-based routes using a RoleBasedRoute component (e.g., for Admin dashboard).
+
+MUI Theme (src/styles/theme.js):
+
+Create a custom MUI theme using createTheme.
+
+Wrap the application with <ThemeProvider> in main.jsx.
+
+Global Styles: Apply global CSS resets or base styles.
+
+C. Feature Slices (Redux Toolkit)
+
+For each major feature (auth, vehicles, bookings, admin users, admin slots), create a slice:
+
+name: e.g., 'auth'
+
+initialState: Define the initial shape of the state (e.g., user: null, token: null, isLoading: false, error: null).
+
+reducers: Define synchronous actions to update state.
+
+extraReducers: Handle async actions dispatched by createAsyncThunk (pending, fulfilled, rejected states).
+
+Async Thunks: Use createAsyncThunk for API calls.
+
+e.g., loginUser = createAsyncThunk('auth/login', async (credentials, thunkAPI) => { ... call authService.login ... })
+
+D. UI Components & Pages
+
+Layout Components (src/components/layout):
+
+Navbar: Displays logo, navigation links (conditional based on auth/role), user menu (Profile, Logout).
+
+Sidebar (for Admin): Admin-specific navigation.
+
+Footer.
+
+Common Components (src/components/common):
+
+LoadingSpinner, ErrorAlert, CustomButton, DataTableMUI (configurable MUI table), ConfirmationModal.
+
+Auth Pages/Components (src/features/auth):
+
+LoginPage: Form with Email, Password. On submit, dispatch loginUser thunk. Handle loading/error states. Redirect on success.
+
+RegisterPage: Form for firstName, lastName, email, password. On submit, dispatch registerUser thunk. Show success/pending approval message.
+
+User Dashboard Pages/Components (src/features/dashboard or specific features):
+
+UserDashboardPage: Overview for logged-in user.
+
+VehicleManagementPage (src/features/vehicles):
+
+Display list of user's vehicles (use DataTableMUI).
+
+"Add Vehicle" button -> Modal with Formik form (license plate, make, model, etc.).
+
+Edit/Delete actions per vehicle.
+
+RequestParkingPage (src/features/bookings):
+
+Form to select one of their registered vehicles.
+
+Date/Time pickers for requestedStartTime, requestedEndTime.
+
+(Optional: ability to see roughly available slots based on type/time before formal request).
+
+Submit button -> dispatch requestParkingSlot thunk.
+
+MyBookingsPage (src/features/bookings):
+
+Display list of user's bookings (past and current) with status (Pending, Confirmed + Slot #, Rejected, Cancelled, etc.).
+
+Ability to cancel pending_approval or confirmed bookings (if rules allow).
+
+Admin Dashboard Pages/Components (src/features/admin):
+
+AdminDashboardPage: Overview stats (pending user approvals, pending booking requests, slot occupancy).
+
+UserApprovalPage (src/features/admin/users):
+
+Table of users with status: 'pending_approval'.
+
+Approve/Reject buttons per user -> dispatch corresponding thunks.
+
+ManageUsersPage (src/features/admin/users):
+
+Table of all users.
+
+Actions: View details, Edit role/status, Suspend/Delete user.
+
+ManageSlotsPage (src/features/admin/slots):
+
+Table of all parking slots.
+
+"Add Slot" button -> Modal with form (slotNumber, location, type, isEVChargingAvailable).
+
+Actions: Edit slot details, Change status (e.g., to 'maintenance').
+
+ManageBookingsPage (src/features/admin/bookings):
+
+Tabs/Filters: "Pending Approval", "Confirmed", "All".
+
+Table of booking requests/bookings.
+
+For "Pending Approval":
+
+View request details (user, vehicle, requested times).
+
+Input to select/assign an available slotId (dropdown of compatible and available slots for the time).
+
+Approve/Reject buttons (with optional remarks field).
+
+For "Confirmed/Active":
+
+Option to "Check-in", "Check-out".
+
+Option to cancel booking by admin.
+
+E. UI/UX Considerations
+
+Responsiveness: Ensure the UI is usable on various screen sizes (MUI grid and responsive props help).
+
+Loading States: Show spinners/skeletons during API calls.
+
+Error Handling: Display user-friendly error messages (use react-toastify for non-blocking notifications, and inline errors for forms).
+
+Accessibility (A11y): Use semantic HTML, ARIA attributes where necessary. MUI components are generally good for A11y.
+
+User Feedback: Clear visual feedback for actions (e.g., success toasts).
+
+Navigation: Intuitive navigation structure. Breadcrumbs for deeper sections.
+
+IV. General Instructions & Workflow
+
+Git Workflow:
+
+Main branch: main (or master).
+
+Development branch: develop.
+
+Feature branches: feature/name-of-feature (e.g., feature/user-registration).
+
+Pull Requests (PRs) for merging features into develop, then develop into main.
+
+Regular commits with clear messages.
+
+Code Quality:
+
+Use ESLint and Prettier for consistent code style and quality.
+
+Write clean, readable, and maintainable code.
+
+Add comments for complex logic.
+
+Testing (Crucial - but detailed instructions for another phase):
+
+Backend: Unit tests (Jest) for controllers, services, utils. Integration tests for API endpoints (Supertest).
+
+Frontend: Unit tests (Jest + React Testing Library) for components and Redux logic. End-to-end tests (Cypress or Playwright).
+
+API Documentation:
+
+Use Swagger/OpenAPI. Annotate backend routes so documentation is auto-generated.
+
+swagger-ui-express to serve the interactive API documentation.
+
+Communication & Iteration:
+
+Although you are an AI, assume regular check-ins. We will review progress, address blockers, and refine requirements as needed.
+
+V. Deployment (Considerations for later)
+
+Backend: Docker container deployed to a cloud platform (AWS ECS, Google Cloud Run, Azure App Service) or a PaaS (Heroku).
+
+Frontend: Static site hosting (AWS S3 + CloudFront, Netlify, Vercel, GitHub Pages).
+
+Database: Managed database service (AWS RDS, Google Cloud SQL, Azure Database for PostgreSQL).
+
+CI/CD: Implement CI/CD pipelines (GitHub Actions, GitLab CI, Jenkins) for automated testing and deployment.
+
+This is a comprehensive starting point. AI coding agent, your task is to begin implementing the backend first, focusing on authentication and user models/routes, followed by parking slot and vehicle management. Then move to the frontend, starting with the auth flow and basic layout.
+
+Let's build a great Vehicle Parking Management System! Any clarifications before you begin generation?
+
+
+Okay, excellent! The AI coding agent has done a phenomenal job setting up the backend. That's a solid foundation.
+
+Now, let's instruct the AI coding agent to build the Frontend using React, Redux Toolkit, and Material-UI (MUI), as we planned.
+
+AI Coding Agent, your next set of instructions is to develop the Frontend Application for "The Vehicle Parking Management System."
+
+Objective: Create a responsive, user-friendly Single Page Application (SPA) that interacts with the backend API you just built.
+
+I. Frontend Project Setup (React with Vite + MUI + Redux Toolkit)
+
+Initialize React Project:
+
+Use Vite to create a new React project (with TypeScript for better scalability, if you're comfortable, otherwise JavaScript is fine).
+
+# Using TypeScript (recommended)
+npm create vite@latest vehicle-parking-frontend -- --template react-ts
+# OR using JavaScript
+# npm create vite@latest vehicle-parking-frontend -- --template react
+cd vehicle-parking-frontend
+
+
+Install Core Dependencies:
+
+npm install react-router-dom @reduxjs/toolkit react-redux axios @mui/material @emotion/react @emotion/styled @mui/icons-material formik yup date-fns react-toastify
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Bash
+IGNORE_WHEN_COPYING_END
+
+react-router-dom: For routing.
+
+@reduxjs/toolkit & react-redux: For state management.
+
+axios: For HTTP requests to the backend.
+
+@mui/material, @emotion/react, @emotion/styled, @mui/icons-material: For the UI component library.
+
+formik & yup: For form handling and validation.
+
+date-fns: For date/time manipulation and formatting (useful with MUI date pickers).
+
+react-toastify: For user-friendly notifications.
+
+Setup Folder Structure:
+Create the following directory structure within vehicle-parking-frontend/src/:
+
+/src
+|-- /app                # Redux store setup
+|   |-- store.js        # (or store.ts if using TypeScript)
+|-- /assets             # Static assets (images, logos)
+|-- /components         # Reusable UI components
+|   |-- /common         # (e.g., LoadingSpinner, ErrorMessage, ConfirmationModal)
+|   |-- /layout         # (e.g., Navbar, Sidebar, Footer, MainLayout)
+|   |-- /auth           # (e.g., ProtectedRoute, AdminRoute)
+|-- /features           # Feature-specific components, slices, services
+|   |-- /auth           # Login, Register components, authSlice.js, authAPI.js
+|   |-- /vehicles       # VehicleList, VehicleForm, vehiclesSlice.js, vehiclesAPI.js
+|   |-- /bookings       # BookingForm, BookingList, bookingsSlice.js, bookingsAPI.js
+|   |-- /dashboard      # UserDashboard, AdminDashboard components
+|   |-- /admin          # Admin-specific features (UserManagement, SlotManagement)
+|       |-- /users      # UserTable, UserApprovalPage, adminUsersSlice.js, adminUsersAPI.js
+|       |-- /slots      # SlotTable, SlotForm, adminSlotsSlice.js, adminSlotsAPI.js
+|-- /hooks              # Custom React hooks (e.g., useAuth)
+|-- /pages              # Top-level route components (wrappers for feature components)
+|   |-- LoginPage.jsx
+|   |-- RegisterPage.jsx
+|   |-- UserDashboardPage.jsx
+|   |-- VehicleManagementPage.jsx
+|   |-- RequestParkingPage.jsx
+|   |-- MyBookingsPage.jsx
+|   |-- AdminDashboardPage.jsx
+|   |-- AdminUserManagementPage.jsx
+|   |-- AdminSlotManagementPage.jsx
+|   |-- AdminBookingManagementPage.jsx
+|   |-- NotFoundPage.jsx
+|-- /services           # API service configurations (Axios instance, base URL)
+|   |-- api.js          # (or api.ts)
+|-- /styles             # Global styles, MUI theme configuration
+|   |-- theme.js        # (or theme.ts)
+|   |-- global.css
+|-- /utils              # Helper functions (e.g., formatters, token storage)
+|-- App.jsx             # Main App component with routing setup
+|-- main.jsx            # Entry point, Redux Provider, Router Provider, ThemeProvider
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+IGNORE_WHEN_COPYING_END
+
+Environment Variables:
+
+Create .env.development in the project root:
+
+VITE_API_BASE_URL=http://localhost:YOUR_BACKEND_PORT/api
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+IGNORE_WHEN_COPYING_END
+
+(Replace YOUR_BACKEND_PORT with the port your backend is running on, e.g., 3000 or the one defined in your backend's .env).
+
+II. Core Frontend Setup
+
+MUI Theme (src/styles/theme.js):
+
+Use createTheme from @mui/material/styles to define a basic theme (palette, typography).
+
+Example:
+
+import { createTheme } from '@mui/material/styles';
+
+export const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#1976d2', // Example primary color
+    },
+    secondary: {
+      main: '#dc004e', // Example secondary color
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, Arial, sans-serif',
+  },
+});
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+JavaScript
+IGNORE_WHEN_COPYING_END
+
+Redux Store (src/app/store.js):
+
+Configure the Redux store using configureStore from @reduxjs/toolkit.
+
+Initially, it might be empty or have a placeholder reducer. You'll add feature slices later.
+
+Example:
+
+import { configureStore } from '@reduxjs/toolkit';
+// Import feature slices here later
+// import authReducer from '../features/auth/authSlice';
+
+export const store = configureStore({
+  reducer: {
+    // auth: authReducer,
+    // Add other reducers here
+  },
+});
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+JavaScript
+IGNORE_WHEN_COPYING_END
+
+API Service (src/services/api.js):
+
+Create an Axios instance.
+
+Set the baseURL using import.meta.env.VITE_API_BASE_URL.
+
+Implement an interceptor to add the JWT token (from localStorage or Redux state) to the Authorization header for authenticated requests.
+
+Implement an interceptor to handle global errors (e.g., if a 401 is received, dispatch a logout action).
+
+Example:
+
+import axios from 'axios';
+import { store } from '../app/store'; // Be careful with circular dependencies if authSlice dispatches from here
+// A better way for token is to get it directly from localStorage or a utility function
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL,
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token'); // Or get from Redux state: store.getState().auth.token
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Optional: Response interceptor for global error handling / token refresh
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      // Handle unauthorized access, e.g., dispatch logout action
+      // store.dispatch(logoutUser()); // This can cause issues, better to handle in component or thunk
+      console.error("Unauthorized, logging out or redirecting...");
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login'; // Simple redirect
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default api;
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+JavaScript
+IGNORE_WHEN_COPYING_END
+
+Entry Point (src/main.jsx):
+
+Wrap the <App /> component with:
+
+<Provider store={store}> (from react-redux)
+
+<ThemeProvider theme={theme}> (from @mui/material/styles)
+
+<BrowserRouter> (from react-router-dom)
+
+<CssBaseline /> (from MUI for style consistency)
+
+<ToastContainer /> (from react-toastify for notifications)
+
+Import react-toastify/dist/ReactToastify.css.
+
+Example:
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+import App from './App';
+import { store } from './app/store';
+import { theme } from './styles/theme';
+import './styles/global.css'; // If you have global styles
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <App />
+          <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+        </BrowserRouter>
+      </ThemeProvider>
+    </Provider>
+  </React.StrictMode>
+);
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Jsx
+IGNORE_WHEN_COPYING_END
+
+Main App Component (src/App.jsx):
+
+Set up main application layout and routing using <Routes> and <Route>.
+
+Define public routes, protected user routes, and protected admin routes.
+
+You will create MainLayout, ProtectedRoute, and AdminRoute components later.
+
+Example structure:
+
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import MainLayout from './components/layout/MainLayout';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import UserDashboardPage from './pages/UserDashboardPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import VehicleManagementPage from './pages/VehicleManagementPage';
+import RequestParkingPage from './pages/RequestParkingPage';
+import MyBookingsPage from './pages/MyBookingsPage';
+import AdminUserManagementPage from './pages/AdminUserManagementPage';
+import AdminSlotManagementPage from './pages/AdminSlotManagementPage';
+import AdminBookingManagementPage from './pages/AdminBookingManagementPage';
+import NotFoundPage from './pages/NotFoundPage';
+
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import AdminRoute from './components/auth/AdminRoute';
+
+function App() {
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      {/* User Protected Routes */}
+      <Route element={<ProtectedRoute roles={['user', 'admin']} />}>
+        <Route element={<MainLayout />}> {/* Wrap protected routes in a layout */}
+          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/dashboard" element={<UserDashboardPage />} />
+          <Route path="/my-vehicles" element={<VehicleManagementPage />} />
+          <Route path="/request-parking" element={<RequestParkingPage />} />
+          <Route path="/my-bookings" element={<MyBookingsPage />} />
+        </Route>
+      </Route>
+
+      {/* Admin Protected Routes */}
+      <Route element={<AdminRoute roles={['admin']} />}>
+         <Route element={<MainLayout />}> {/* Can use same or different layout for admin */}
+          <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+          <Route path="/admin/users" element={<AdminUserManagementPage />} />
+          <Route path="/admin/slots" element={<AdminSlotManagementPage />} />
+          <Route path="/admin/bookings" element={<AdminBookingManagementPage />} />
+        </Route>
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}
+
+export default App;
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+Jsx
+IGNORE_WHEN_COPYING_END
+
+III. Layout and Auth Components
+
+Main Layout (src/components/layout/MainLayout.jsx):
+
+Include a Navbar and an <Outlet /> (from react-router-dom) to render child routes.
+
+Optionally include a Sidebar (especially for admin views) and a Footer.
+
+Use MUI components like AppBar, Toolbar, Drawer, Container, Box.
+
+Navbar (src/components/layout/Navbar.jsx):
+
+Display application title/logo.
+
+Conditional navigation links based on authentication status and user role (from Redux state).
+
+"Login", "Register" if not authenticated.
+
+"Dashboard", "My Vehicles", "Request Parking", "My Bookings" for users.
+
+Admin links like "Admin Dashboard", "Manage Users", "Manage Slots" for admins.
+
+User menu with "Profile" (optional) and "Logout" button. Logout should dispatch a logout action.
+
+Sidebar (src/components/layout/Sidebar.jsx):
+
+Primarily for admin navigation if the Navbar becomes too crowded.
+
+Use MUI Drawer component.
+
+Protected Route (src/components/auth/ProtectedRoute.jsx):
+
+A wrapper component that checks if a user is authenticated (e.g., token exists and user object in Redux state).
+
+If not authenticated, redirects to /login.
+
+If authenticated and roles prop is provided, check if the user's role matches one of the allowed roles. If not, redirect to an "Unauthorized" page or user dashboard.
+
+Renders <Outlet /> if authorized.
+
+Admin Route (src/components/auth/AdminRoute.jsx):
+
+Similar to ProtectedRoute but specifically checks if user.role === 'admin'.
+
+Redirects to /dashboard or /login if not an admin.
+
+IV. Feature Development (Redux Slices, API Services, Components, Pages)
+
+For each major feature (Auth, Vehicles, Bookings, Admin User Management, Admin Slot Management, Admin Booking Management):
+
+A. Create a Redux Slice (src/features/<featureName>/<featureName>Slice.js):
+
+Use createSlice from Redux Toolkit.
+
+Define initialState (e.g., data: [], item: null, isLoading: false, error: null, status: 'idle').
+
+Define reducers for synchronous state updates.
+
+Use createAsyncThunk for asynchronous API calls (CRUD operations). Define pending, fulfilled, and rejected cases in extraReducers.
+
+Example for authSlice:
+
+// src/features/auth/authSlice.js
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import authAPI from './authAPI'; // You'll create this
+
+const user = JSON.parse(localStorage.getItem('user'));
+const token = localStorage.getItem('token');
+
+const initialState = {
+  user: user ? user : null,
+  token: token ? token : null,
+  isError: false,
+  isSuccess: false,
+  isLoading: false,
+  message: '',
+  isAuthenticated: !!token, // Derived state
+};
+
+export const registerUser = createAsyncThunk('auth/register', async (userData, thunkAPI) => { /* ... */ });
+export const loginUser = createAsyncThunk('auth/login', async (userData, thunkAPI) => { /* ... */ });
+export const logoutUser = createAsyncThunk('auth/logout', async () => { /* ... */ });
+export const fetchCurrentUser = createAsyncThunk('auth/me', async (_, thunkAPI) => { /* ... */ });
+
+
+export const authSlice = createSlice({
+  name: 'auth',
+  initialState,
+  reducers: {
+    reset: (state) => { /* reset state fields */ },
+    // ... other sync reducers
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(loginUser.pending, (state) => { state.isLoading = true; })
+      .addCase(loginUser.fulfilled, (state, action) => { /* update state, set token/user, localStorage */ })
+      .addCase(loginUser.rejected, (state, action) => { /* update state with error */ })
+      // ... handle other thunks (register, logout, fetchCurrentUser)
+  },
+});
+
+export const { reset } = authSlice.actions;
+export default authSlice.reducer;
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+JavaScript
+IGNORE_WHEN_COPYING_END
+
+Add this slice's reducer to src/app/store.js.
+
+B. Create an API Service File (src/features/<featureName>/<featureName>API.js):
+
+This file will contain functions that use the configured Axios instance (src/services/api.js) to make API calls for that specific feature.
+
+Example for authAPI.js:
+
+// src/features/auth/authAPI.js
+import api from '../../services/api';
+
+const register = async (userData) => {
+  const response = await api.post('/auth/register', userData);
+  return response.data;
+};
+
+const login = async (userData) => {
+  const response = await api.post('/auth/login', userData);
+  if (response.data.token) {
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+  }
+  return response.data;
+};
+
+const logout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('user');
+};
+
+const getCurrentUser = async () => {
+    const response = await api.get('/auth/me');
+    return response.data;
+}
+const authAPI = { register, login, logout, getCurrentUser };
+export default authAPI;
+IGNORE_WHEN_COPYING_START
+content_copy
+download
+Use code with caution.
+JavaScript
+IGNORE_WHEN_COPYING_END
+
+C. Implement Components and Pages:
+
+Use MUI components (TextField, Button, Table, TableBody, TableCell, TableHead, TableRow, Paper, Modal, Dialog, DatePicker from @mui/x-date-pickers - needs setup, Select, MenuItem, CircularProgress, Alert, etc.).
+
+Use Formik and Yup for forms.
+
+Dispatch Redux thunks for API interactions.
+
+Select data from the Redux store using useSelector.
+
+Display loading states and error messages.
+
+Use react-toastify for success/error notifications.
+
+Step-by-Step Feature Implementation Guide:
+
+Authentication (Auth):
+
+Pages: LoginPage.jsx, RegisterPage.jsx.
+
+Redux: authSlice.js, authAPI.js.
+
+Logic:
+
+Login form -> loginUser thunk -> on success, store token/user, navigate to dashboard.
+
+Register form -> registerUser thunk -> display success/pending message.
+
+Logout functionality in Navbar -> logoutUser thunk -> clear token/user, navigate to login.
+
+On app load, potentially dispatch fetchCurrentUser if a token exists.
+
+User Dashboard (UserDashboardPage.jsx):
+
+Display welcome message, summary information, quick links.
+
+Vehicle Management (User):
+
+Page: VehicleManagementPage.jsx.
+
+Components: VehicleList.jsx (using MUI Table or DataGrid), VehicleForm.jsx (in a Modal or separate view).
+
+Redux: vehiclesSlice.js, vehiclesAPI.js.
+
+Logic: CRUD operations for user's vehicles.
+
+Request Parking Slot (User):
+
+Page: RequestParkingPage.jsx.
+
+Component: BookingRequestForm.jsx (select vehicle, date/time pickers from @mui/x-date-pickers/AdapterDateFns and @mui/x-date-pickers).
+
+Redux: bookingsSlice.js (or a part of it), bookingsAPI.js.
+
+Logic: Submit booking request.
+
+My Bookings (User):
+
+Page: MyBookingsPage.jsx.
+
+Component: UserBookingsList.jsx.
+
+Redux: bookingsSlice.js, bookingsAPI.js.
+
+Logic: Display user's booking history, status, allow cancellation if applicable.
+
+Admin Dashboard (AdminDashboardPage.jsx):
+
+Display overview stats (pending user approvals, pending booking requests, slot occupancy).
+
+Links to admin management sections.
+
+Admin User Management:
+
+Page: AdminUserManagementPage.jsx (could have tabs/sections for pending approvals and all users).
+
+Components: PendingUserTable.jsx, AllUsersTable.jsx.
+
+Redux: adminUsersSlice.js, adminUsersAPI.js.
+
+Logic: View pending users, approve/reject. View all users, edit role/status, suspend.
+
+Admin Parking Slot Management:
+
+Page: AdminSlotManagementPage.jsx.
+
+Components: SlotList.jsx, SlotForm.jsx (in Modal).
+
+Redux: adminSlotsSlice.js, adminSlotsAPI.js.
+
+Logic: CRUD for parking slots.
+
+Admin Booking Management:
+
+Page: AdminBookingManagementPage.jsx.
+
+Components: PendingBookingsTable.jsx, AllBookingsTable.jsx.
+
+Redux: adminBookingsSlice.js (or extend bookingsSlice), adminBookingsAPI.js.
+
+Logic: View pending booking requests, assign slot, approve/reject. View all bookings, check-in/check-out, cancel.
+
+V. Important UI/UX Considerations to Implement
+
+Loading Indicators: Use MUI CircularProgress or Skeleton components while data is fetching.
+
+Error Handling: Display user-friendly error messages using MUI Alert components or inline form errors.
+
+Notifications: Use react-toastify for non-blocking success/error/info messages.
+
+Responsiveness: Ensure the layout and components adapt to different screen sizes using MUI's grid system and responsive props.
+
+Accessibility: Use semantic HTML and ARIA attributes where necessary. MUI components are generally good for this.
+
+Form Validation: Provide clear client-side validation feedback using Formik/Yup.
+
+VI. Final Steps for AI Agent
+
+Iteratively Build: Start with Auth, then core layout, then User features, then Admin features.
+
+Connect to Backend: Ensure all API calls are directed to the correct backend endpoints you previously defined.
+
+Test Thoroughly (as you "code"): Mentally walk through user flows.
+
+Code Style: Maintain clean and consistent code. If you set up ESLint/Prettier for the backend, consider a similar setup for the frontend.
+
+AI Coding Agent, this is a detailed plan for the frontend. Please proceed with setting up the project and then implementing the features step-by-step, starting with the Authentication flow and core layout. Let me know if you need any specific component examples or further clarification on any part.
