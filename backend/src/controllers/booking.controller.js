@@ -14,7 +14,7 @@ const createBookingRequest = async (req, res, next) => {
     // Verify the vehicle belongs to the user
     const vehicle = await Vehicle.findOne({
       where: { id: vehicleId, userId },
-      include: [{ model: User, as: 'user' }]
+      include: [{ model: User, as: 'owner' }]
     });
 
     if (!vehicle) {
