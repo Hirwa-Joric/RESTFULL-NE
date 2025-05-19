@@ -8,10 +8,11 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Divider,
   Avatar,
   Typography,
   IconButton,
+  styled,
+  Badge,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -22,6 +23,7 @@ import {
   Person as PersonIcon,
   Logout as LogoutIcon,
   ChevronLeft as ChevronLeftIcon,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { getStoredUser, getFullName, logoutUser } from '../../utils/authWrapper';
 import { hasRole } from '../../utils/auth';
@@ -34,7 +36,60 @@ interface SidebarProps {
   width?: number;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 260 }) => {
+// Styled components for the sidebar
+const SidebarRoot = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  flexDirection: 'column',
+  height: '100%',
+  backgroundColor: '#fff',
+  color: theme.palette.text.primary,
+  borderRight: `1px solid ${theme.palette.grey[200]}`,
+}));
+
+const LogoWrapper = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(3),
+  display: 'flex', 
+  alignItems: 'center',
+  height: '72px',
+  borderBottom: `1px solid ${theme.palette.grey[100]}`,
+}));
+
+const SidebarMenu = styled(List)(({ theme }) => ({
+  padding: theme.spacing(2),
+  '& .MuiListItem-root': {
+    marginBottom: theme.spacing(0.5),
+  },
+}));
+
+const MenuItemButton = styled(ListItemButton)(({ theme }) => ({
+  borderRadius: 12,
+  padding: theme.spacing(1.5, 2),
+  '&.Mui-selected': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.08),
+    color: theme.palette.primary.main,
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.12),
+    },
+    '& .MuiListItemIcon-root': {
+      color: theme.palette.primary.main,
+    },
+  },
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.grey[500], 0.08),
+  },
+}));
+
+const CategoryLabel = styled(Typography)(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  fontSize: '0.75rem',
+  fontWeight: 600,
+  textTransform: 'uppercase',
+  letterSpacing: '0.5px',
+  padding: theme.spacing(0, 2, 1, 2),
+  marginTop: theme.spacing(2),
+}));
+
+const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 280 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getStoredUser();
@@ -103,31 +158,20 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 260 }
   const isActive = (path: string) => location.pathname === path;
 
   const drawerContent = (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100%',
-    }}>
+    <SidebarRoot>
       {/* Logo & Brand Section */}
-      <Box 
-        sx={{ 
-          p: 3,
-          display: 'flex', 
-          alignItems: 'center',
-          height: '64px',
-        }}
-      >
+      <LogoWrapper>
         <Typography 
           variant="h6" 
           component="div" 
           sx={{ 
             fontWeight: 700, 
-            color: '#fff',
             display: 'flex',
             alignItems: 'center',
             '& svg': {
               mr: 1,
               fontSize: 24,
+              color: 'primary.main',
             }
           }}
         >
@@ -139,32 +183,31 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 260 }
             onClick={onClose}
             sx={{ 
               ml: 'auto',
-              color: 'rgba(255, 255, 255, 0.7)',
-              '&:hover': {
-                color: '#fff',
-              }
+              color: 'text.secondary',
             }}
+            size="small"
           >
             <ChevronLeftIcon />
           </IconButton>
         )}
-      </Box>
+      </LogoWrapper>
 
-      {/* User Profile Section - Simplified */}
+      {/* User Profile Section */}
       <Box 
         sx={{ 
           px: 3, 
           py: 2,
           display: 'flex', 
           alignItems: 'center',
+          borderBottom: 1,
+          borderColor: 'grey.100',
         }}
       >
         <Avatar 
           sx={{ 
-            width: 40, 
-            height: 40,
-            bgcolor: alpha('#fff', 0.2),
-            color: '#fff',
+            width: 42, 
+            height: 42,
+            bgcolor: 'primary.light',
           }}
         >
           {user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
@@ -175,7 +218,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 260 }
             variant="subtitle1" 
             noWrap
             sx={{ 
-              color: '#fff',
               fontWeight: 600,
             }}
           >
@@ -185,7 +227,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 260 }
             variant="body2" 
             noWrap
             sx={{ 
-              color: 'rgba(255, 255, 255, 0.7)', 
+              color: 'text.secondary', 
             }}
           >
             {isAdmin ? 'Administrator' : 'User'}
@@ -193,95 +235,102 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 260 }
         </Box>
       </Box>
       
-      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)', my: 1 }} />
-      
-      {/* Navigation Links */}
-      <List component="nav" sx={{ px: 2, flex: 1 }}>
+      {/* Main Navigation */}
+      <CategoryLabel>Main</CategoryLabel>
+      <SidebarMenu component="nav">
         {navItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
+          <ListItem key={item.text} disablePadding>
+            <MenuItemButton
               onClick={() => handleNavigate(item.path)}
               selected={isActive(item.path)}
-              sx={{
-                borderRadius: 1,
-                '&.Mui-selected': {
-                  bgcolor: alpha('#fff', 0.15),
-                  '&:hover': {
-                    bgcolor: alpha('#fff', 0.25),
-                  }
-                },
-                '&:hover': {
-                  bgcolor: alpha('#fff', 0.1),
-                }
-              }}
             >
-              <ListItemIcon sx={{ color: isActive(item.path) ? '#fff' : 'rgba(255, 255, 255, 0.7)', minWidth: 40 }}>
+              <ListItemIcon sx={{ minWidth: 36 }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText 
                 primary={item.text} 
                 primaryTypographyProps={{ 
                   fontSize: 14,
-                  fontWeight: isActive(item.path) ? 600 : 400,
-                  color: isActive(item.path) ? '#fff' : 'rgba(255, 255, 255, 0.7)',
+                  fontWeight: isActive(item.path) ? 600 : 500,
                 }}
               />
-            </ListItemButton>
+            </MenuItemButton>
           </ListItem>
         ))}
-      </List>
+      </SidebarMenu>
       
-      <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)', my: 1 }} />
+      {/* Notifications Section */}
+      <CategoryLabel>Notifications</CategoryLabel>
+      <SidebarMenu>
+        <ListItem disablePadding>
+          <MenuItemButton
+            onClick={() => handleNavigate('/notifications')}
+            selected={isActive('/notifications')}
+          >
+            <ListItemIcon sx={{ minWidth: 36 }}>
+              <Badge badgeContent={3} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </ListItemIcon>
+            <ListItemText 
+              primary="Parking Alerts" 
+              primaryTypographyProps={{ 
+                fontSize: 14,
+                fontWeight: 500,
+              }}
+            />
+          </MenuItemButton>
+        </ListItem>
+      </SidebarMenu>
       
       {/* Account Section */}
-      <List sx={{ px: 2 }}>
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            onClick={() => handleNavigate(isAdmin ? '/admin/profile' : '/profile')}
-            sx={{
-              borderRadius: 1,
-              '&:hover': {
-                bgcolor: alpha('#fff', 0.1),
-              }
-            }}
-          >
-            <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)', minWidth: 40 }}>
-              <PersonIcon />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Profile" 
-              primaryTypographyProps={{ 
-                fontSize: 14,
-                color: 'rgba(255, 255, 255, 0.7)',
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
-        
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={handleLogout}
-            sx={{
-              borderRadius: 1,
-              '&:hover': {
-                bgcolor: alpha('#fff', 0.1),
-              }
-            }}
-          >
-            <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)', minWidth: 40 }}>
-              <LogoutIcon />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Logout" 
-              primaryTypographyProps={{ 
-                fontSize: 14,
-                color: 'rgba(255, 255, 255, 0.7)',
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
-      </List>
-    </Box>
+      <Box sx={{ mt: 'auto' }}>
+        <CategoryLabel>Account</CategoryLabel>
+        <SidebarMenu>
+          <ListItem disablePadding>
+            <MenuItemButton
+              onClick={() => handleNavigate(isAdmin ? '/admin/profile' : '/profile')}
+              selected={isActive(isAdmin ? '/admin/profile' : '/profile')}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <PersonIcon />
+              </ListItemIcon>
+              <ListItemText 
+                primary="My Profile" 
+                primaryTypographyProps={{ 
+                  fontSize: 14,
+                  fontWeight: 500,
+                }}
+              />
+            </MenuItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <MenuItemButton onClick={handleLogout}>
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                <LogoutIcon />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Log Out" 
+                primaryTypographyProps={{ 
+                  fontSize: 14,
+                  fontWeight: 500,
+                }}
+              />
+            </MenuItemButton>
+          </ListItem>
+        </SidebarMenu>
+      </Box>
+      
+      {/* Version Info */}
+      <Box sx={{ p: 3, mt: 2, borderTop: 1, borderColor: 'grey.100' }}>
+        <Typography variant="caption" color="text.secondary">
+          Park Easy v1.0.5
+        </Typography>
+        <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+          © 2023 Parking Management System
+        </Typography>
+      </Box>
+    </SidebarRoot>
   );
 
   return (
@@ -292,12 +341,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 260 }
       sx={{
         width: width,
         flexShrink: 0,
-        [`& .MuiDrawer-paper`]: { 
-          width: width, 
+        '& .MuiDrawer-paper': {
+          width: width,
           boxSizing: 'border-box',
-          bgcolor: '#1a237e', // Deep blue background
-          backgroundImage: 'linear-gradient(rgba(26, 35, 126, 0.8), rgba(26, 35, 126, 0.95))',
-          boxShadow: '0 0 20px rgba(0, 0, 0, 0.2)',
+          border: 'none',
         },
       }}
     >

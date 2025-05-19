@@ -16,21 +16,92 @@ import {
   InputBase,
   Badge,
   Divider,
+  styled,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
   AccountCircle,
-  Logout,
-  Settings,
-  Person,
+  Logout as LogoutIcon,
+  Settings as SettingsIcon,
+  Person as PersonIcon,
   Search as SearchIcon,
   Notifications as NotificationsIcon,
+  Help as HelpIcon,
 } from '@mui/icons-material';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import { getStoredUser, getFullName, logoutUser } from '../../utils/authWrapper';
 import { hasRole } from '../../utils/auth';
-import NotificationsMenu from '../common/NotificationsMenu';
 import { alpha } from '@mui/material/styles';
+
+// Styled components
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
+  zIndex: theme.zIndex.drawer + 1,
+  borderBottom: `1px solid ${theme.palette.grey[200]}`,
+  backgroundColor: '#fff',
+  height: '72px',
+  boxShadow: 'none',
+}));
+
+const StyledToolbar = styled(Toolbar)(({ theme }) => ({
+  minHeight: '72px',
+  padding: theme.spacing(0, 3),
+}));
+
+const SearchBox = styled(Box)(({ theme }) => ({
+  position: 'relative',
+  borderRadius: theme.shape.borderRadius * 2,
+  backgroundColor: alpha(theme.palette.grey[100], 0.9),
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.grey[100], 1),
+  },
+  width: '100%',
+  maxWidth: '320px',
+  marginRight: theme.spacing(2),
+  [theme.breakpoints.down('sm')]: {
+    display: 'none',
+  },
+}));
+
+const SearchIconWrapper = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(0, 2),
+  height: '100%',
+  position: 'absolute',
+  pointerEvents: 'none',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const StyledInputBase = styled(InputBase)(({ theme }) => ({
+  color: 'inherit',
+  width: '100%',
+  '& .MuiInputBase-input': {
+    padding: theme.spacing(1.2, 1, 1.2, 0),
+    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    width: '100%',
+    fontSize: '0.9rem',
+  },
+}));
+
+const ProfileButton = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  cursor: 'pointer',
+  borderRadius: theme.shape.borderRadius,
+  transition: 'background-color 0.2s',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.grey[200], 0.8),
+  },
+  marginLeft: theme.spacing(1),
+  padding: theme.spacing(0.5, 1),
+}));
+
+const IconButtonStyled = styled(IconButton)(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  marginLeft: theme.spacing(1),
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.grey[200], 0.8),
+  },
+}));
 
 interface NavbarProps {
   toggleSidebar: () => void;
@@ -73,16 +144,8 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
   };
 
   return (
-    <AppBar 
-      position="static" 
-      elevation={0}
-      sx={{ 
-        zIndex: theme.zIndex.drawer + 1,
-        borderBottom: `1px solid ${theme.palette.grey[200]}`,
-        height: '64px',
-      }}
-    >
-      <Toolbar sx={{ minHeight: '64px' }}>
+    <StyledAppBar position="sticky">
+      <StyledToolbar>
         {isMobile && (
           <IconButton
             color="inherit"
@@ -96,72 +159,42 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
         )}
         
         {/* Search bar */}
-        <Box 
-          sx={{ 
-            position: 'relative',
-            borderRadius: theme.shape.borderRadius,
-            backgroundColor: alpha(theme.palette.grey[100], 0.85),
-            '&:hover': {
-              backgroundColor: alpha(theme.palette.grey[100], 1),
-            },
-            width: '100%',
-            maxWidth: '320px',
-            marginRight: 2,
-            [theme.breakpoints.down('sm')]: {
-              display: { xs: 'none', sm: 'flex' }
-            }
-          }}
-        >
-          <Box sx={{ padding: theme.spacing(0, 2), height: '100%', position: 'absolute', pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <SearchIcon sx={{ color: theme.palette.grey[500] }} />
-          </Box>
-          <InputBase
-            placeholder="Search…"
-            sx={{
-              color: 'inherit',
-              '& .MuiInputBase-input': {
-                padding: theme.spacing(1, 1, 1, 0),
-                paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-                width: '100%',
-              },
-              width: '100%'
-            }}
+        <SearchBox>
+          <SearchIconWrapper>
+            <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+          </SearchIconWrapper>
+          <StyledInputBase
+            placeholder="Search..."
           />
-        </Box>
+        </SearchBox>
 
         <Box sx={{ flexGrow: 1 }} />
 
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Help */}
+            <Tooltip title="Help">
+              <IconButtonStyled size="medium">
+                <HelpIcon fontSize="small" />
+              </IconButtonStyled>
+            </Tooltip>
+            
             {/* Notifications */}
-            <IconButton color="inherit" sx={{ mr: 1 }}>
-              <Badge badgeContent={1} color="error">
-                <NotificationsIcon sx={{ color: theme.palette.grey[600] }} />
-              </Badge>
-            </IconButton>
+            <Tooltip title="Notifications">
+              <IconButtonStyled size="medium">
+                <Badge badgeContent={3} color="error" sx={{ '& .MuiBadge-badge': { fontSize: 9, height: 16, minWidth: 16 } }}>
+                  <NotificationsIcon fontSize="small" />
+                </Badge>
+              </IconButtonStyled>
+            </Tooltip>
 
             {/* User Menu */}
-            <Box 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center',
-                cursor: 'pointer',
-                borderRadius: 1,
-                transition: 'background-color 0.2s',
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.grey[200], 0.8),
-                },
-                ml: 1,
-                py: 0.5,
-                px: 1
-              }} 
-              onClick={handleMenu}
-            >
+            <ProfileButton onClick={handleMenu}>
               <Avatar 
                 sx={{ 
-                  width: 35,
-                  height: 35,
-                  bgcolor: theme.palette.primary.main,
+                  width: 36,
+                  height: 36,
+                  backgroundColor: theme.palette.primary.light,
                 }}
               >
                 {user?.firstName?.charAt(0) || <AccountCircle />}
@@ -170,34 +203,21 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
                 <Box sx={{ ml: 1 }}>
                   <Typography 
                     variant="subtitle2" 
-                    sx={{ fontWeight: 500, lineHeight: 1.2, color: theme.palette.text.primary }}
+                    sx={{ fontWeight: 600, lineHeight: 1.2 }}
                   >
                     {user ? getFullName(user) : 'User'}
                   </Typography>
-                  <Box 
-                    component="span" 
-                    sx={{ 
-                      display: 'inline-flex',
-                      alignItems: 'center', 
-                      fontSize: '0.7rem',
-                      color: theme.palette.text.secondary 
-                    }}
+                  <Typography 
+                    variant="caption" 
+                    color="text.secondary"
+                    sx={{ display: 'block', lineHeight: 1.2 }}
                   >
-                    <Box 
-                      component="span" 
-                      sx={{ 
-                        width: 6, 
-                        height: 6, 
-                        borderRadius: '50%', 
-                        bgcolor: theme.palette.success.main,
-                        mr: 0.5 
-                      }} 
-                    />
-                    Online
-                  </Box>
+                    {isAdmin ? 'Administrator' : 'User'}
+                  </Typography>
                 </Box>
               )}
-            </Box>
+            </ProfileButton>
+            
             <Menu
               anchorEl={anchorEl}
               anchorOrigin={{
@@ -214,11 +234,11 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
               PaperProps={{
                 elevation: 1,
                 sx: {
-                  mt: 1,
+                  mt: 1.5,
                   minWidth: 180,
-                  borderRadius: 1,
+                  borderRadius: 2,
                   overflow: 'visible',
-                  boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.1)',
+                  boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.08)',
                   '&:before': {
                     content: '""',
                     display: 'block',
@@ -248,25 +268,30 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
                   sx={{ mt: 1, height: 20, fontSize: '0.7rem' }}
                 />
               </Box>
+              
               <Divider />
-              <MenuItem onClick={handleProfile} sx={{ py: 1 }}>
-                <Person fontSize="small" sx={{ mr: 1.5, fontSize: '1.2rem', color: theme.palette.text.secondary }} />
-                <Typography variant="body2">Profile</Typography>
+              
+              <MenuItem onClick={handleProfile} sx={{ py: 1.5 }}>
+                <PersonIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+                <Typography variant="body2">My Profile</Typography>
               </MenuItem>
-              <MenuItem onClick={handleSettings} sx={{ py: 1 }}>
-                <Settings fontSize="small" sx={{ mr: 1.5, fontSize: '1.2rem', color: theme.palette.text.secondary }} />
+              
+              <MenuItem onClick={handleSettings} sx={{ py: 1.5 }}>
+                <SettingsIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
                 <Typography variant="body2">Settings</Typography>
               </MenuItem>
+              
               <Divider />
-              <MenuItem onClick={handleLogout} sx={{ py: 1 }}>
-                <Logout fontSize="small" sx={{ mr: 1.5, fontSize: '1.2rem', color: theme.palette.error.main }} />
-                <Typography variant="body2" color="error">Logout</Typography>
+              
+              <MenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
+                <LogoutIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+                <Typography variant="body2">Logout</Typography>
               </MenuItem>
             </Menu>
           </Box>
         )}
-      </Toolbar>
-    </AppBar>
+      </StyledToolbar>
+    </StyledAppBar>
   );
 };
 

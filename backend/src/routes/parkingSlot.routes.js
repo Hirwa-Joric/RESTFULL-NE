@@ -34,7 +34,11 @@ router.use(isAuthenticated);
  *               slotNumber:
  *                 type: string
  *               locationDescription:
- *                 type: string
+ *                 type: stringokay i like the project right now but the design i do't like it that much so i made some dash board design that i wanted and found some and i ound a desin that i liked i want youto apply that desing for my project systematicaly undrestadn how the design is made and make my project like that desin the whole of it reflect that desin i am not saying u should replicate it use the same icons and what so ever and the same links i am just telling you to appropriate the desin logic use there how things were set up and do the same for my project 
+
+i have provided the image that i see if a good one so so ahead and be responsible and take charge 
+
+you are in charge responsible for eveyr thing  don't ask me for comfirmation to make cange u make them 
  *               type:
  *                 type: string
  *                 enum: [car, motorcycle, van, electric_car, disabled]
