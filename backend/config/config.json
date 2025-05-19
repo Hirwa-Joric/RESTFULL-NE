@@ -1,0 +1,23 @@
+{
+  "development": {
+    "username": "parking_user",
+    "password": "parking123",
+    "database": "parking_system",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "parking_user",
+    "password": "parking123",
+    "database": "parking_system_test",
+    "host": "localhost",
+    "dialect": "postgres"
+  },
+  "production": {
+    "username": "parking_user",
+    "password": "parking123",
+    "database": "parking_system",
+    "host": "localhost",
+    "dialect": "postgres"
+  }
+}
