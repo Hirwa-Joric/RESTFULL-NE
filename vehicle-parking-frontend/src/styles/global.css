@@ -1,6 +1,41 @@
 /* Import Inter font from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
+:root {
+  --primary-color: #4CAF50; /* Adjusted Green - brighter, closer to Material Green */
+  --secondary-color: #2196F3; /* Adjusted Blue - brighter, closer to Material Blue */
+  --accent-color-red: #F44336; /* Material Red */
+
+  --sidebar-bg: #23272A; /* Dark Gray */
+  --sidebar-text: #E0E0E0;
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-hover-bg: #36393F;
+
+  --page-bg: var(--sidebar-bg); /* Page background now matches sidebar background */
+  --content-bg: #F8F9FA; /* Very light off-white - for inputs or subtle sections on white */
+  --content-sheet-bg: #F2F4F7; /* New: Subtle light gray for content sheet background */
+  --card-bg: #FFFFFF; /* Main panel/card background - pure white */
+  --border-color: #EEEEEE; /* Much lighter border color for subtle divisions on white cards */
+
+  --text-primary: #212529; /* Slightly darker for better contrast */
+  --text-secondary: #6C757D; /* Standard secondary text color */
+  
+  /* Text colors for dark backgrounds (like the new page-bg) might need to be defined if elements directly on page-bg need text */
+  --text-primary-on-dark: #EAECEF;
+  --text-secondary-on-dark: #AAB8C2;
+
+  --text-on-dark-bg: #FFFFFF; /* Ensuring text on colored cards/sidebar is pure white */
+
+  --toastify-color-success: var(--primary-color);
+  --toastify-color-error: var(--accent-color-red);
+  --toastify-color-warning: #FF9800; /* Material Orange */
+  --toastify-color-info: var(--secondary-color);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -13,8 +48,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #172B4D;
-  background-color: #F7F9FC;
+  color: var(--text-primary);
+  background-color: var(--page-bg); /* Updated to new page background */
+  overscroll-behavior-y: contain; /* Prevent elastic scroll showing white */
 }
 
 code {
@@ -29,17 +65,17 @@ code {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--sidebar-hover-bg); /* Scrollbar track slightly lighter than page-bg for visibility */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #555; /* Darker thumb for dark scrollbar track */
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #666; /* Lighter hover for thumb */
 }
 
 /* Button styling */
@@ -50,13 +86,7 @@ button {
 /* Header Styles */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
-}
-
-:root {
-  --toastify-color-success: #4caf50;
-  --toastify-color-error: #f44336;
-  --toastify-color-warning: #ff9800;
-  --toastify-color-info: #2196f3;
+  color: var(--text-primary); /* Ensure headings use primary text color */
 }
 
 .app-container {

@@ -44,79 +44,93 @@ import { alpha } from '@mui/material/styles';
 import DashboardChartComponent from '../features/dashboard/DashboardChartComponent';
 
 // Styled components
-const DashboardTitle = styled(Typography)(({ theme }) => ({
-  fontWeight: 700,
-  marginBottom: theme.spacing(3),
+const DashboardPageContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(0), // Padding is now handled by PageContent in MainLayout for the page itself
+  backgroundColor: 'transparent', // Sits on the white ContentSheet from MainLayout
+  // minHeight is handled by PageContent in MainLayout
 }));
 
-const StyledCard = styled(Card)(({ theme }) => ({
+const DashboardTitle = styled(Typography)(({ theme }) => ({
+  fontWeight: 700,
+  color: 'var(--text-primary)',
+  marginBottom: theme.spacing(3),
+  fontSize: '1.75rem', // Larger title
+}));
+
+const StatCard = styled(Card)<{ cardColor?: string; textColor?: string }>(({ theme, cardColor, textColor }) => ({
   height: '100%',
-  borderRadius: 16,
-  boxShadow: 'none',
-  border: `1px solid ${theme.palette.grey[200]}`,
-  transition: 'all 0.3s ease',
-  position: 'relative',
-  overflow: 'hidden',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: theme.shadows[3],
-  },
+  borderRadius: '12px',
+  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
+  border: 'none',
+  padding: theme.spacing(2.5),
+  backgroundColor: cardColor || 'var(--card-bg)',
+  color: textColor || 'var(--text-primary)',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
+  ...(cardColor && cardColor !== 'var(--card-bg)' && {
+    color: 'var(--text-on-dark-bg)',
+    '& .MuiTypography-root': {
+      color: 'var(--text-on-dark-bg)',
+    },
+    '& .MuiSvgIcon-root': {
+      color: 'var(--text-on-dark-bg)',
+    }
+  })
 }));
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 600,
+  color: 'var(--text-primary)',
   marginBottom: theme.spacing(2),
-  marginTop: theme.spacing(4),
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
+  marginTop: theme.spacing(4), // Keep some top margin for sections
+  fontSize: '1.25rem',
 }));
 
-const StyledAvatar = styled(Avatar)(({ theme, color }: { theme: any; color?: string }) => ({
-  backgroundColor: alpha(theme.palette[color || 'primary'].main, 0.1),
-  color: theme.palette[color || 'primary'].main,
+const IconAvatar = styled(Avatar)<{ avatarColor?: string; iconColor?: string }>(({ theme, avatarColor, iconColor }) => ({
+  backgroundColor: avatarColor || alpha(theme.palette.primary.main, 0.1),
+  color: iconColor || theme.palette.primary.main,
   width: 48,
   height: 48,
 }));
 
-const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  borderRadius: 16,
-  border: `1px solid ${theme.palette.grey[200]}`,
-  boxShadow: 'none',
-}));
-
-const TrendBadge = styled(Box)<{ trend: 'up' | 'down' }>(({ theme, trend }) => ({
-  color: trend === 'up' ? theme.palette.success.main : theme.palette.error.main,
-  display: 'flex',
-  alignItems: 'center',
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  backgroundColor: alpha(trend === 'up' ? theme.palette.success.main : theme.palette.error.main, 0.1),
-  padding: theme.spacing(0.5, 1),
-  borderRadius: theme.shape.borderRadius,
-}));
-
-const StatusChip = styled(Chip)(({ theme, status }: { theme: any; status: string }) => {
-  let color = theme.palette.info.main;
-  let bgColor = alpha(theme.palette.info.main, 0.1);
-  
-  if (status === 'approved' || status === 'active') {
-    color = theme.palette.success.main;
-    bgColor = alpha(theme.palette.success.main, 0.1);
-  } else if (status === 'pending') {
-    color = theme.palette.warning.main;
-    bgColor = alpha(theme.palette.warning.main, 0.1);
-  } else if (status === 'expired' || status === 'cancelled') {
-    color = theme.palette.error.main;
-    bgColor = alpha(theme.palette.error.main, 0.1);
-  }
-  
+const StyledTrendBadge = styled(Box)<{ trend: 'up' | 'down' }>(({ theme, trend }) => {
+  const successColor = 'var(--primary-color)'; // Using primary for "up"
+  const errorColor = 'var(--accent-color-red)';
+  const color = trend === 'up' ? successColor : errorColor;
   return {
-    backgroundColor: bgColor,
     color: color,
+    display: 'flex',
+    alignItems: 'center',
+    fontWeight: 500,
+    fontSize: '0.75rem',
+    backgroundColor: alpha(color, 0.15),
+    padding: theme.spacing(0.5, 1),
+    borderRadius: theme.shape.borderRadius,
+  };
+});
+
+const StyledStatusChip = styled(Chip)(({ theme, status }: { theme: any; status: string }) => {
+  let chipColor = 'var(--text-secondary)';
+  let chipBgColor = alpha(chipColor, 0.1);
+
+  if (status === 'approved' || status === 'active') {
+    chipColor = 'var(--primary-color)';
+    chipBgColor = alpha(chipColor, 0.15);
+  } else if (status === 'pending') {
+    chipColor = 'var(--toastify-color-warning)';
+    chipBgColor = alpha(chipColor, 0.15);
+  } else if (status === 'expired' || status === 'cancelled' || status === 'rejected') {
+    chipColor = 'var(--accent-color-red)';
+    chipBgColor = alpha(chipColor, 0.15);
+  }
+  return {
+    backgroundColor: chipBgColor,
+    color: chipColor,
     fontWeight: 500,
     fontSize: '0.75rem',
     height: 24,
+    borderRadius: '6px',
   };
 });
 
@@ -187,366 +201,261 @@ const AdminDashboardPage: React.FC = () => {
     { id: 1, user: "John Smith", vehicle: "Toyota Camry (ABC-123)", date: "Nov 7, 2023", time: "10:00 AM - 2:00 PM", status: "pending" },
     { id: 2, user: "Sarah Johnson", vehicle: "Honda Civic (XYZ-789)", date: "Nov 8, 2023", time: "9:30 AM - 5:00 PM", status: "approved" },
     { id: 3, user: "Michael Brown", vehicle: "Tesla Model 3 (EV-2023)", date: "Nov 9, 2023", time: "8:00 AM - 6:00 PM", status: "active" },
+    { id: 4, user: "Emily Davis", vehicle: "Ford F-150 (OLD-BIG)", date: "Nov 9, 2023", time: "1:00 PM - 3:00 PM", status: "rejected" },
   ];
 
   return (
-    <Box>
-      <DashboardTitle variant="h4">
-        Analytics
+    <DashboardPageContainer>
+      <DashboardTitle variant="h1"> 
+        Dashboard Overview
       </DashboardTitle>
 
       <Grid container spacing={3}>
-        {/* Total Bookings */}
+        {/* Stat Card 1: Total Bookings - Green Background */}
         <Grid item xs={12} sm={6} md={3}>
-          <StyledCard>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <StyledAvatar color="primary">
-                  <BookingsIcon />
-                </StyledAvatar>
-                <TrendBadge trend="up">
-                  <TrendingUpIcon fontSize="small" sx={{ mr: 0.5, fontSize: 14 }} />
-                  +3.4%
-                </TrendBadge>
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Total Bookings
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 600, my: 1 }}>
-                  {totalBookings}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Chip 
-                    size="small"
-                    label="View All" 
-                    component="a"
-                    href="/admin/bookings"
-                    clickable
-                    sx={{ 
-                      bgcolor: alpha('#2E7D32', 0.1), 
-                      color: 'primary.main',
-                      fontWeight: 500,
-                      '&:hover': {
-                        bgcolor: alpha('#2E7D32', 0.2),
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
-            </CardContent>
-          </StyledCard>
+          <StatCard cardColor="var(--primary-color)">
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <IconAvatar avatarColor={alpha("var(--text-on-dark-bg)", 0.2)} iconColor="var(--text-on-dark-bg)">
+                <BookingsIcon />
+              </IconAvatar>
+              <StyledTrendBadge trend="up">
+                <TrendingUpIcon fontSize="inherit" sx={{ mr: 0.5, fontSize: '1rem' }} />
+                +3.4%
+              </StyledTrendBadge>
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5 }}>
+                {totalBookings}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                Total Bookings
+              </Typography>
+            </Box>
+          </StatCard>
         </Grid>
 
-        {/* Today's Bookings */}
+        {/* Stat Card 2: Today's Bookings - Blue Background */}
         <Grid item xs={12} sm={6} md={3}>
-          <StyledCard>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <StyledAvatar color="secondary">
-                  <CalendarIcon />
-                </StyledAvatar>
-                <TrendBadge trend="down">
-                  <TrendingDownIcon fontSize="small" sx={{ mr: 0.5, fontSize: 14 }} />
-                  -5.5%
-                </TrendBadge>
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Today's Bookings
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 600, my: 1 }}>
-                  {todaysBookings}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Chip 
-                    size="small"
-                    label="View Today" 
-                    component="a"
-                    href="/admin/bookings?filter=today"
-                    clickable
-                    sx={{ 
-                      bgcolor: alpha('#5C6BC0', 0.1), 
-                      color: 'secondary.main',
-                      fontWeight: 500,
-                      '&:hover': {
-                        bgcolor: alpha('#5C6BC0', 0.2),
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
-            </CardContent>
-          </StyledCard>
+          <StatCard cardColor="var(--secondary-color)">
+             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <IconAvatar avatarColor={alpha("var(--text-on-dark-bg)", 0.2)} iconColor="var(--text-on-dark-bg)">
+                <CalendarIcon />
+              </IconAvatar>
+              <StyledTrendBadge trend="down">
+                <TrendingDownIcon fontSize="inherit" sx={{ mr: 0.5, fontSize: '1rem' }} />
+                -5.5%
+              </StyledTrendBadge>
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5 }}>
+                {todaysBookings}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                Today's Bookings
+              </Typography>
+            </Box>
+          </StatCard>
         </Grid>
 
-        {/* Available Slots */}
+        {/* Stat Card 3: Available Slots - White Background */}
         <Grid item xs={12} sm={6} md={3}>
-          <StyledCard>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <StyledAvatar color="success">
-                  <LocalParkingIcon />
-                </StyledAvatar>
-                <IconButton size="small">
-                  <MoreVertIcon fontSize="small" />
-                </IconButton>
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Available Slots
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 600, my: 1 }}>
-                  {loading ? <CircularProgress size={24} /> : availableSlots}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Chip 
-                    size="small"
-                    label="Manage Slots" 
-                    component="a"
-                    href="/admin/slots"
-                    clickable
-                    sx={{ 
-                      bgcolor: alpha('#66BB6A', 0.1), 
-                      color: 'success.main',
-                      fontWeight: 500,
-                      '&:hover': {
-                        bgcolor: alpha('#66BB6A', 0.2),
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
-            </CardContent>
-          </StyledCard>
+          <StatCard>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <IconAvatar avatarColor={alpha("var(--primary-color)", 0.15)} iconColor="var(--primary-color)">
+                <LocalParkingIcon />
+              </IconAvatar>
+              {/* Optional: Add a MoreVertIcon if actions are needed */}
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5 }}>
+                {loading ? <CircularProgress size={28} color="inherit"/> : availableSlots}
+              </Typography>
+              <Typography variant="body2" color="var(--text-secondary)">
+                Available Slots
+              </Typography>
+            </Box>
+          </StatCard>
         </Grid>
 
-        {/* Pending Users */}
+        {/* Stat Card 4: Pending Users - White Background */}
         <Grid item xs={12} sm={6} md={3}>
-          <StyledCard>
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <StyledAvatar color="warning">
-                  <PeopleIcon />
-                </StyledAvatar>
-                <IconButton size="small">
-                  <MoreVertIcon fontSize="small" />
-                </IconButton>
-              </Box>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Pending Users
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 600, my: 1 }}>
-                  {loading ? <CircularProgress size={24} /> : pendingUserApprovals}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Chip 
-                    size="small"
-                    label="Review" 
-                    component="a"
-                    href="/admin/users?filter=pending"
-                    clickable
-                    sx={{ 
-                      bgcolor: alpha('#FFA726', 0.1), 
-                      color: 'warning.main',
-                      fontWeight: 500,
-                      '&:hover': {
-                        bgcolor: alpha('#FFA726', 0.2),
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
-            </CardContent>
-          </StyledCard>
+          <StatCard>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <IconAvatar avatarColor={alpha("var(--toastify-color-warning)", 0.15)} iconColor="var(--toastify-color-warning)">
+                <PeopleIcon />
+              </IconAvatar>
+               {/* Optional: Add a MoreVertIcon if actions are needed */}
+            </Box>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5 }}>
+                {loading ? <CircularProgress size={28} color="inherit"/> : pendingUserApprovals}
+              </Typography>
+              <Typography variant="body2" color="var(--text-secondary)">
+                Pending Users
+              </Typography>
+            </Box>
+          </StatCard>
         </Grid>
       </Grid>
 
-      {/* Parking Map Section */}
-      <SectionTitle variant="h5">
-        <span>Parking Overview</span>
-        <Button 
-          variant="contained" 
-          size="small" 
-          startIcon={<AddIcon />}
-          onClick={() => navigate('/admin/slots/add')}
-          sx={{ borderRadius: 2 }}
-        >
-          Add Slot
-        </Button>
-      </SectionTitle>
-      
-      <StyledCard sx={{ mb: 4, p: 0 }}>
-        <Box sx={{ minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Typography variant="body1" color="text.secondary">
-            Parking Map Visualization Will Be Displayed Here
-          </Typography>
-        </Box>
-      </StyledCard>
+      {/* Middle Row: Main Chart and Utilization Donut */}
+      <Grid container spacing={3} sx={{ mt: 1 }}>
+        {/* Main Chart Card */}
+        <Grid item xs={12} md={7} lg={8}>
+          <StatCard sx={{ p: 0, overflow: 'hidden', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}> {/* Added subtle hover effect */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2.5, pb: 1 }}>
+              <Typography variant="h6" fontWeight={600} color="var(--text-primary)">
+                Parking Activity Trends
+              </Typography>
+              {/* Optional: Add view controls or date range pickers here */}
+            </Box>
+            <Divider sx={{ borderColor: 'var(--border-color)'}} />
+            <Box sx={{ p: 2.5, pt: 2 }}>
+              <DashboardChartComponent chartType="area" />
+            </Box>
+          </StatCard>
+        </Grid>
 
-      {/* Booking Requests and Analytics */}
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <StyledCard>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3, pb: 1 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Recent Booking Requests
+        {/* Parking Utilization Donut Chart Card */}
+        <Grid item xs={12} md={5} lg={4}>
+          <StatCard sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}> {/* Added subtle hover effect */}
+            <Typography variant="h6" fontWeight={600} color="var(--text-primary)" sx={{ mb: 2 }}>
+              Current Slot Occupancy
+            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', minHeight: 180 }}>
+              <CircularProgress
+                variant="determinate"
+                value={100}
+                size={170}
+                thickness={4}
+                sx={{ color: 'var(--border-color)', position: 'absolute' }}
+              />
+              <CircularProgress
+                variant="determinate"
+                value={parkingUtilization}
+                size={170}
+                thickness={4}
+                sx={{ color: 'var(--primary-color)', position: 'absolute' }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center',
+                }}
+              >
+                <Typography variant="h3" fontWeight={700} color="var(--text-primary)">
+                  {parkingUtilization}%
+                </Typography>
+                <Typography variant="body2" color="var(--text-secondary)">
+                  Utilized
+                </Typography>
+              </Box>
+            </Box>
+            <Grid container spacing={2} sx={{ mt: 2.5 }}>
+              <Grid item xs={6}>
+                <Box sx={{ p: 1.5, bgcolor: alpha('var(--primary-color)', 0.1), borderRadius: '8px', textAlign: 'center' }}>
+                  <Typography variant="body2" color="var(--text-secondary)" gutterBottom>
+                    Available
+                  </Typography>
+                  <Typography variant="h5" color="var(--primary-color)" fontWeight={600}>
+                    {loading ? <CircularProgress size={20}/> : availableSlots}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={6}>
+                <Box sx={{ p: 1.5, bgcolor: alpha('var(--accent-color-red)', 0.1), borderRadius: '8px', textAlign: 'center' }}>
+                  <Typography variant="body2" color="var(--text-secondary)" gutterBottom>
+                    Occupied
+                  </Typography>
+                  <Typography variant="h5" color="var(--accent-color-red)" fontWeight={600}>
+                     {loading ? <CircularProgress size={20}/> : occupiedSlots}
+                  </Typography>
+                </Box>
+              </Grid>
+            </Grid>
+          </StatCard>
+        </Grid>
+      </Grid>
+      
+      {/* Bottom Row: Recent Booking Requests */}
+      <Grid container spacing={3} sx={{ mt: 1 }}>
+        <Grid item xs={12}>
+          <StatCard sx={{ p: 0, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}> {/* Added subtle hover effect */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2.5, pb: 1 }}>
+              <Typography variant="h6" fontWeight={600} color="var(--text-primary)">
+                Recent Bookings
               </Typography>
               <Button 
                 size="small" 
                 variant="text" 
                 onClick={() => navigate('/admin/bookings')}
+                sx={{ color: 'var(--primary-color)', '&:hover': { backgroundColor: alpha('var(--primary-color)', 0.05) } }}
               >
                 View All
               </Button>
             </Box>
-            <Divider />
-            <Box sx={{ p: 0 }}>
-              {recentRequests.length > 0 ? (
-                recentRequests.map((request) => (
+            <Divider sx={{ borderColor: 'var(--border-color)' }} />
+            <Box>
+              {loading ? (
+                 <Box sx={{ p: 3, textAlign: 'center' }}><CircularProgress /></Box>
+              ) : recentRequests.length > 0 ? (
+                recentRequests.map((request, index) => (
                   <Box 
                     key={request.id} 
                     sx={{ 
                       p: 2, 
-                      borderBottom: 1, 
-                      borderColor: 'divider', 
-                      '&:last-child': { borderBottom: 0 },
+                      borderBottom: index === recentRequests.length - 1 ? 0 : 1, 
+                      borderColor: 'var(--border-color)', 
                       display: 'flex',
                       alignItems: 'center',
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.action.hover, 0.3) // Using theme.palette for generic hover
+                      }
                     }}
                   >
-                    <Avatar sx={{ bgcolor: alpha('#5C6BC0', 0.1), color: 'secondary.main', mr: 2 }}>
+                    <IconAvatar 
+                        avatarColor={alpha(request.status === 'approved' || request.status === 'active' ? 'var(--primary-color)' : request.status === 'pending' ? 'var(--toastify-color-warning)' : 'var(--accent-color-red)', 0.15)} 
+                        iconColor={request.status === 'approved' || request.status === 'active' ? 'var(--primary-color)' : request.status === 'pending' ? 'var(--toastify-color-warning)' : 'var(--accent-color-red)'}
+                        sx={{ mr: 2 }}
+                    >
                       <VehicleIcon />
-                    </Avatar>
-                    <Box sx={{ flexGrow: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle2" fontWeight={600}>
-                          {request.user}
-                        </Typography>
-                        <StatusChip 
-                          label={request.status} 
-                          status={request.status}
-                          size="small"
-                        />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary">
+                    </IconAvatar>
+                    <Box sx={{ flexGrow: 1, mr: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={600} color="var(--text-primary)">
+                        {request.user}
+                      </Typography>
+                      <Typography variant="body2" color="var(--text-secondary)" sx={{ display: 'block' }}>
                         {request.vehicle}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" color="var(--text-secondary)">
                         {request.date}, {request.time}
                       </Typography>
                     </Box>
+                    <StyledStatusChip 
+                      label={request.status.charAt(0).toUpperCase() + request.status.slice(1)} 
+                      status={request.status}
+                    />
                   </Box>
                 ))
               ) : (
                 <Box sx={{ p: 3, textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    No pending requests
+                  <Typography variant="body2" color="var(--text-secondary)">
+                    No recent booking requests.
                   </Typography>
                 </Box>
               )}
             </Box>
-          </StyledCard>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <StyledCard>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 3, pb: 1 }}>
-              <Typography variant="h6" fontWeight={600}>
-                Parking Utilization
-              </Typography>
-            </Box>
-            <Divider />
-            <CardContent>
-              <Box sx={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', mb: 2 }}>
-                <Box sx={{ position: 'relative', width: 180, height: 180 }}>
-                  <CircularProgress
-                    variant="determinate"
-                    value={100}
-                    size={180}
-                    thickness={4}
-                    sx={{ color: alpha('#E0E0E0', 0.4), position: 'absolute' }}
-                  />
-                  <CircularProgress
-                    variant="determinate"
-                    value={parkingUtilization}
-                    size={180}
-                    thickness={4}
-                    sx={{ color: 'primary.main', position: 'absolute' }}
-                  />
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      bottom: 0,
-                      right: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography variant="h4" fontWeight={700}>
-                      {parkingUtilization}%
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Utilized
-                    </Typography>
-                  </Box>
-                </Box>
-              </Box>
-              
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                <Grid item xs={6}>
-                  <Box sx={{ p: 2, bgcolor: alpha('#4CAF50', 0.1), borderRadius: 2, textAlign: 'center' }}>
-                    <Typography variant="subtitle2" color="primary.main" gutterBottom>
-                      Available
-                    </Typography>
-                    <Typography variant="h5" color="primary.main" fontWeight={600}>
-                      {availableSlots}
-                    </Typography>
-                  </Box>
-                </Grid>
-                <Grid item xs={6}>
-                  <Box sx={{ p: 2, bgcolor: alpha('#F44336', 0.1), borderRadius: 2, textAlign: 'center' }}>
-                    <Typography variant="subtitle2" color="error.main" gutterBottom>
-                      Occupied
-                    </Typography>
-                    <Typography variant="h5" color="error.main" fontWeight={600}>
-                      {occupiedSlots}
-                    </Typography>
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </StyledCard>
+          </StatCard>
         </Grid>
       </Grid>
 
-      {/* Analytics Section */}
-      <SectionTitle variant="h5">
-        <span>Booking Analytics</span>
-      </SectionTitle>
-      
-      <StyledCard sx={{ mb: 4, overflow: 'hidden' }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs 
-            value={tabValue} 
-            onChange={handleTabChange} 
-            sx={{ px: 3 }}
-          >
-            <Tab label="Daily" />
-            <Tab label="Weekly" />
-            <Tab label="Monthly" />
-          </Tabs>
-        </Box>
-        <Box sx={{ p: 3 }}>
-          <DashboardChartComponent chartType="area" />
-        </Box>
-      </StyledCard>
-    </Box>
+      {/* Remove old "Parking Map Section" and "Analytics Section with Tabs" */}
+      {/* The chart is now integrated into the "Parking Activity Trends" card */}
+
+    </DashboardPageContainer> // Changed from Box to DashboardPageContainer
   );
 };
 

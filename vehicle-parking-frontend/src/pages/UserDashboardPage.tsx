@@ -41,20 +41,26 @@ import { alpha } from '@mui/material/styles';
 import DashboardChartComponent from '../features/dashboard/DashboardChartComponent';
 
 // Styled components
+const DashboardPageContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(0),
+  backgroundColor: 'transparent', // Sits on the ContentSheet from MainLayout
+}));
+
 const DashboardTitle = styled(Typography)(({ theme }) => ({
   fontWeight: 700,
+  color: 'var(--text-primary)',
   marginBottom: theme.spacing(3),
+  fontSize: '1.75rem', // Larger title, matching AdminDashboardPage
 }));
 
 const StyledCard = styled(Card)(({ theme }) => ({
   height: '100%',
-  borderRadius: 16,
-  boxShadow: 'none',
-  border: `1px solid ${theme.palette.grey[200]}`,
-  transition: 'all 0.3s ease',
+  borderRadius: 12, // Matching AdminDashboardPage's StatCard
+  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)', // Enhanced shadow for better depth
+  border: 'none', // No borders, matching AdminDashboardPage
+  transition: 'transform 0.2s ease',
   '&:hover': {
     transform: 'translateY(-4px)',
-    boxShadow: theme.shadows[3],
   },
 }));
 
@@ -75,43 +81,44 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
-  borderRadius: 16,
-  border: `1px solid ${theme.palette.grey[200]}`,
-  boxShadow: 'none',
+  borderRadius: 12,
+  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
+  border: 'none',
 }));
 
 const UpcomingBookingCard = styled(Card)(({ theme }) => ({
-  borderRadius: 16,
-  boxShadow: 'none',
-  border: `1px solid ${theme.palette.grey[200]}`,
-  transition: 'all 0.3s ease',
+  borderRadius: 12,
+  boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
+  border: 'none',
+  transition: 'transform 0.2s ease',
   '&:hover': {
-    boxShadow: `0px 8px 16px ${alpha(theme.palette.primary.main, 0.1)}`,
+    transform: 'translateY(-4px)',
   },
   marginBottom: theme.spacing(2),
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }: { theme: any; status: string }) => {
-  let color = theme.palette.info.main;
-  let bgColor = alpha(theme.palette.info.main, 0.1);
+  let chipColor = 'var(--text-secondary)'; 
+  let chipBgColor = alpha('var(--text-secondary)', 0.1);
   
   if (status === 'approved' || status === 'active') {
-    color = theme.palette.success.main;
-    bgColor = alpha(theme.palette.success.main, 0.1);
+    chipColor = 'var(--primary-color)';
+    chipBgColor = alpha('var(--primary-color)', 0.15);
   } else if (status === 'pending') {
-    color = theme.palette.warning.main;
-    bgColor = alpha(theme.palette.warning.main, 0.1);
-  } else if (status === 'expired' || status === 'cancelled') {
-    color = theme.palette.error.main;
-    bgColor = alpha(theme.palette.error.main, 0.1);
+    chipColor = 'var(--toastify-color-warning)';
+    chipBgColor = alpha('var(--toastify-color-warning)', 0.15);
+  } else if (status === 'expired' || status === 'cancelled' || status === 'rejected') {
+    chipColor = 'var(--accent-color-red)';
+    chipBgColor = alpha('var(--accent-color-red)', 0.15);
   }
   
   return {
-    backgroundColor: bgColor,
-    color: color,
+    backgroundColor: chipBgColor,
+    color: chipColor,
     fontWeight: 500,
     fontSize: '0.75rem',
     height: 24,
+    borderRadius: '6px',
   };
 });
 
@@ -217,7 +224,7 @@ const UserDashboardPage: React.FC = () => {
   }
 
   return (
-    <Box>
+    <DashboardPageContainer>
       <DashboardTitle variant="h4">
         Overview
       </DashboardTitle>
@@ -759,7 +766,7 @@ const UserDashboardPage: React.FC = () => {
           </StyledCard>
         </Grid>
       </Grid>
-    </Box>
+    </DashboardPageContainer>
   );
 };
 

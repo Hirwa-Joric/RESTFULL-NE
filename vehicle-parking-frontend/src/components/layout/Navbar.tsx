@@ -17,6 +17,7 @@ import {
   Badge,
   Divider,
   styled,
+  Button,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -27,6 +28,8 @@ import {
   Search as SearchIcon,
   Notifications as NotificationsIcon,
   Help as HelpIcon,
+  ArrowDropDown as ArrowDropDownIcon,
+  DirectionsCar as DirectionsCarIcon,
 } from '@mui/icons-material';
 import { getStoredUser, getFullName, logoutUser } from '../../utils/authWrapper';
 import { hasRole } from '../../utils/auth';
@@ -35,50 +38,67 @@ import { alpha } from '@mui/material/styles';
 // Styled components
 const StyledAppBar = styled(AppBar)(({ theme }) => ({
   zIndex: theme.zIndex.drawer + 1,
-  borderBottom: `1px solid ${theme.palette.grey[200]}`,
-  backgroundColor: '#fff',
+  borderBottom: `1px solid var(--border-color)`,
+  backgroundColor: 'transparent',
   height: '72px',
   boxShadow: 'none',
+  color: 'var(--text-primary)',
+  borderTopLeftRadius: '16px',
+  borderTopRightRadius: '16px',
 }));
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   minHeight: '72px',
   padding: theme.spacing(0, 3),
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(0, 2),
+  },
 }));
 
 const SearchBox = styled(Box)(({ theme }) => ({
   position: 'relative',
-  borderRadius: theme.shape.borderRadius * 2,
-  backgroundColor: alpha(theme.palette.grey[100], 0.9),
+  borderRadius: '10px',
+  backgroundColor: 'var(--content-bg)',
   '&:hover': {
-    backgroundColor: alpha(theme.palette.grey[100], 1),
+    backgroundColor: alpha(theme.palette.grey[400], 0.30),
   },
   width: '100%',
-  maxWidth: '320px',
+  maxWidth: '400px',
   marginRight: theme.spacing(2),
+  marginLeft: theme.spacing(1),
+  [theme.breakpoints.down('md')]: {
+    maxWidth: '280px',
+  },
   [theme.breakpoints.down('sm')]: {
-    display: 'none',
+    flexGrow: 1,
+    marginRight: theme.spacing(1),
+    marginLeft: theme.spacing(1),
   },
 }));
 
 const SearchIconWrapper = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(0, 2),
+  padding: theme.spacing(0, 1.5),
   height: '100%',
   position: 'absolute',
   pointerEvents: 'none',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  color: 'var(--text-secondary)',
 }));
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
-  color: 'inherit',
+  color: 'var(--text-primary)',
   width: '100%',
   '& .MuiInputBase-input': {
     padding: theme.spacing(1.2, 1, 1.2, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    paddingLeft: `calc(1em + ${theme.spacing(3.5)})`,
     width: '100%',
     fontSize: '0.9rem',
+    '&::placeholder': {
+      color: 'var(--text-secondary)',
+      opacity: 1,
+    }
   },
 }));
 
@@ -86,20 +106,42 @@ const ProfileButton = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer',
-  borderRadius: theme.shape.borderRadius,
+  borderRadius: theme.shape.borderRadius * 5,
   transition: 'background-color 0.2s',
-  '&:hover': {
-    backgroundColor: alpha(theme.palette.grey[200], 0.8),
-  },
+  padding: theme.spacing(0.5, 0.5, 0.5, 1),
   marginLeft: theme.spacing(1),
-  padding: theme.spacing(0.5, 1),
+  '&:hover': {
+    backgroundColor: 'var(--content-bg)',
+  },
 }));
 
 const IconButtonStyled = styled(IconButton)(({ theme }) => ({
-  color: theme.palette.text.secondary,
-  marginLeft: theme.spacing(1),
+  color: 'var(--text-secondary)',
+  marginLeft: theme.spacing(0.5),
+  marginRight: theme.spacing(0.5),
+  padding: theme.spacing(1),
   '&:hover': {
-    backgroundColor: alpha(theme.palette.grey[200], 0.8),
+    backgroundColor: 'var(--content-bg)',
+    color: 'var(--text-primary)',
+  },
+}));
+
+const PrimaryActionButton = styled(Button)(({ theme }) => ({
+  backgroundColor: 'var(--primary-color)',
+  color: 'var(--sidebar-text-active)',
+  padding: theme.spacing(0.75, 2.5),
+  marginLeft: theme.spacing(1.5),
+  borderRadius: '10px',
+  textTransform: 'none',
+  fontSize: '0.875rem',
+  fontWeight: 600,
+  boxShadow: 'none',
+  '&:hover': {
+    backgroundColor: alpha(theme.palette.primary.dark, 0.8),
+    boxShadow: 'none',
+  },
+  [theme.breakpoints.down('sm')]: {
+    display: 'none',
   },
 }));
 
@@ -146,25 +188,26 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
   return (
     <StyledAppBar position="sticky">
       <StyledToolbar>
-        {isMobile && (
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={toggleSidebar}
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-        )}
+        <IconButton
+          aria-label="open drawer"
+          edge="start"
+          onClick={toggleSidebar}
+          sx={{
+            mr: 1,
+            color: 'var(--text-secondary)',
+            display: { xs: 'flex', md: 'none' }
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
         
-        {/* Search bar */}
         <SearchBox>
           <SearchIconWrapper>
-            <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+            <SearchIcon sx={{ fontSize: 22 }} />
           </SearchIconWrapper>
           <StyledInputBase
-            placeholder="Search..."
+            placeholder="Search something..."
+            inputProps={{ 'aria-label': 'search' }}
           />
         </SearchBox>
 
@@ -172,51 +215,50 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
 
         {user && (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {/* Help */}
-            <Tooltip title="Help">
-              <IconButtonStyled size="medium">
-                <HelpIcon fontSize="small" />
-              </IconButtonStyled>
-            </Tooltip>
-            
-            {/* Notifications */}
+            <PrimaryActionButton 
+              variant="contained" 
+              startIcon={<DirectionsCarIcon sx={{ fontSize: 18 }} />}
+            >
+              New Booking
+            </PrimaryActionButton>
+
             <Tooltip title="Notifications">
               <IconButtonStyled size="medium">
-                <Badge badgeContent={3} color="error" sx={{ '& .MuiBadge-badge': { fontSize: 9, height: 16, minWidth: 16 } }}>
-                  <NotificationsIcon fontSize="small" />
+                <Badge badgeContent={3} color="error" sx={{ '& .MuiBadge-badge': { fontSize: 9, height: 15, minWidth: 15, p: '0 4px' } }}>
+                  <NotificationsIcon sx={{ fontSize: 22 }} />
                 </Badge>
               </IconButtonStyled>
             </Tooltip>
-
-            {/* User Menu */}
-            <ProfileButton onClick={handleMenu}>
-              <Avatar 
-                sx={{ 
-                  width: 36,
-                  height: 36,
-                  backgroundColor: theme.palette.primary.light,
-                }}
-              >
-                {user?.firstName?.charAt(0) || <AccountCircle />}
-              </Avatar>
-              {!isMobile && (
-                <Box sx={{ ml: 1 }}>
-                  <Typography 
-                    variant="subtitle2" 
-                    sx={{ fontWeight: 600, lineHeight: 1.2 }}
-                  >
-                    {user ? getFullName(user) : 'User'}
-                  </Typography>
-                  <Typography 
-                    variant="caption" 
-                    color="text.secondary"
-                    sx={{ display: 'block', lineHeight: 1.2 }}
-                  >
-                    {isAdmin ? 'Administrator' : 'User'}
-                  </Typography>
-                </Box>
-              )}
-            </ProfileButton>
+            
+            <Tooltip title="Account settings">
+              <ProfileButton onClick={handleMenu}>
+                <Avatar 
+                  sx={{ 
+                    width: 32,
+                    height: 32,
+                    bgcolor: 'var(--secondary-color)',
+                    fontSize: '0.875rem',
+                    color: 'var(--sidebar-text-active)',
+                  }}
+                >
+                  {user?.firstName?.charAt(0)?.toUpperCase() || <AccountCircle />}
+                </Avatar>
+                {!isMobile && (
+                  <Box sx={{ ml: 1, display: 'flex', alignItems: 'center' }}>
+                    <Typography 
+                      variant="body2"
+                      sx={{ fontWeight: 600, color: 'var(--text-primary)' }}
+                    >
+                      {getFullName(user)?.split(' ')[0]}
+                    </Typography>
+                    <ArrowDropDownIcon sx={{ color: 'var(--text-secondary)', fontSize: 20, ml: 0.5 }}/>
+                  </Box>
+                )}
+                {isMobile && (
+                     <ArrowDropDownIcon sx={{ color: 'var(--text-secondary)', fontSize: 20, ml: 0.5 }}/>
+                )}
+              </ProfileButton>
+            </Tooltip>
             
             <Menu
               anchorEl={anchorEl}
@@ -232,13 +274,14 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
               open={Boolean(anchorEl)}
               onClose={handleClose}
               PaperProps={{
-                elevation: 1,
+                elevation: 0,
                 sx: {
                   mt: 1.5,
-                  minWidth: 180,
+                  minWidth: 220,
                   borderRadius: 2,
                   overflow: 'visible',
-                  boxShadow: '0px 5px 15px rgba(0, 0, 0, 0.08)',
+                  border: `1px solid var(--border-color)`,
+                  boxShadow: '0px 4px 12px rgba(0,0,0,0.05)',
                   '&:before': {
                     content: '""',
                     display: 'block',
@@ -247,9 +290,11 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
                     right: 14,
                     width: 10,
                     height: 10,
-                    bgcolor: 'background.paper',
+                    bgcolor: 'var(--card-bg)',
                     transform: 'translateY(-50%) rotate(45deg)',
                     zIndex: 0,
+                    borderTop: `1px solid var(--border-color)`,
+                    borderLeft: `1px solid var(--border-color)`,
                   },
                 }
               }}
@@ -272,19 +317,19 @@ const Navbar: React.FC<NavbarProps> = ({ toggleSidebar, sidebarOpen }) => {
               <Divider />
               
               <MenuItem onClick={handleProfile} sx={{ py: 1.5 }}>
-                <PersonIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+                <PersonIcon fontSize="small" sx={{ mr: 1.5, color: 'var(--text-secondary)' }} />
                 <Typography variant="body2">My Profile</Typography>
               </MenuItem>
               
               <MenuItem onClick={handleSettings} sx={{ py: 1.5 }}>
-                <SettingsIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+                <SettingsIcon fontSize="small" sx={{ mr: 1.5, color: 'var(--text-secondary)' }} />
                 <Typography variant="body2">Settings</Typography>
               </MenuItem>
               
               <Divider />
               
               <MenuItem onClick={handleLogout} sx={{ py: 1.5 }}>
-                <LogoutIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+                <LogoutIcon fontSize="small" sx={{ mr: 1.5, color: 'var(--accent-color-red)', fontSize: 20 }} />
                 <Typography variant="body2">Logout</Typography>
               </MenuItem>
             </Menu>

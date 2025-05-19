@@ -24,6 +24,7 @@ import {
   Logout as LogoutIcon,
   ChevronLeft as ChevronLeftIcon,
   Notifications as NotificationsIcon,
+  Menu as MenuIcon,
 } from '@mui/icons-material';
 import { getStoredUser, getFullName, logoutUser } from '../../utils/authWrapper';
 import { hasRole } from '../../utils/auth';
@@ -41,55 +42,101 @@ const SidebarRoot = styled(Box)(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
   height: '100%',
-  backgroundColor: '#fff',
-  color: theme.palette.text.primary,
-  borderRight: `1px solid ${theme.palette.grey[200]}`,
+  backgroundColor: 'var(--sidebar-bg)',
+  color: 'var(--sidebar-text)',
 }));
 
 const LogoWrapper = styled(Box)(({ theme }) => ({
-  padding: theme.spacing(3),
+  padding: theme.spacing(2.5, 3),
   display: 'flex', 
   alignItems: 'center',
+  justifyContent: 'space-between',
   height: '72px',
-  borderBottom: `1px solid ${theme.palette.grey[100]}`,
+  borderBottom: `1px solid var(--sidebar-hover-bg)`,
+}));
+
+const UserProfileWrapper = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2, 3),
+  display: 'flex',
+  alignItems: 'center',
+  borderBottom: `1px solid var(--sidebar-hover-bg)`,
+  marginBottom: theme.spacing(1),
 }));
 
 const SidebarMenu = styled(List)(({ theme }) => ({
-  padding: theme.spacing(2),
+  padding: theme.spacing(1, 2),
   '& .MuiListItem-root': {
     marginBottom: theme.spacing(0.5),
   },
 }));
 
 const MenuItemButton = styled(ListItemButton)(({ theme }) => ({
-  borderRadius: 12,
-  padding: theme.spacing(1.5, 2),
-  '&.Mui-selected': {
-    backgroundColor: alpha(theme.palette.primary.main, 0.08),
-    color: theme.palette.primary.main,
-    '&:hover': {
-      backgroundColor: alpha(theme.palette.primary.main, 0.12),
-    },
-    '& .MuiListItemIcon-root': {
-      color: theme.palette.primary.main,
-    },
+  borderRadius: 8,
+  padding: theme.spacing(1.25, 2),
+  margin: theme.spacing(0.5, 0),
+  color: 'var(--sidebar-text)',
+  '& .MuiListItemIcon-root': {
+    color: 'var(--sidebar-text)',
+    minWidth: 38,
   },
   '&:hover': {
-    backgroundColor: alpha(theme.palette.grey[500], 0.08),
+    backgroundColor: 'var(--sidebar-hover-bg)',
+    color: 'var(--sidebar-text-active)',
+    '& .MuiListItemIcon-root': {
+      color: 'var(--sidebar-text-active)',
+    },
+  },
+  '&.Mui-selected': {
+    backgroundColor: 'var(--primary-color)',
+    color: 'var(--sidebar-text-active)',
+    '&:hover': {
+      backgroundColor: 'var(--primary-color)',
+    },
+    '& .MuiListItemIcon-root': {
+      color: 'var(--sidebar-text-active)',
+    },
   },
 }));
 
 const CategoryLabel = styled(Typography)(({ theme }) => ({
-  color: theme.palette.text.secondary,
-  fontSize: '0.75rem',
+  color: 'var(--sidebar-text)',
+  opacity: 0.7,
+  fontSize: '0.7rem',
   fontWeight: 600,
   textTransform: 'uppercase',
   letterSpacing: '0.5px',
-  padding: theme.spacing(0, 2, 1, 2),
-  marginTop: theme.spacing(2),
+  padding: theme.spacing(2, 2.5, 0.5, 2.5),
 }));
 
-const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 280 }) => {
+const LogoutButtonWrapper = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2, 2, 2, 2),
+  marginTop: 'auto',
+}));
+
+const StyledLogoutButton = styled(ListItemButton)(({ theme }) => ({
+  backgroundColor: 'var(--sidebar-hover-bg)',
+  color: 'var(--sidebar-text)',
+  borderRadius: 8,
+  padding: theme.spacing(1.5, 2),
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center',
+  '&:hover': {
+    backgroundColor: 'var(--accent-color-red)',
+    color: 'var(--sidebar-text-active)',
+    '& .MuiListItemIcon-root': {
+      color: 'var(--sidebar-text-active)',
+    },
+  },
+  '& .MuiListItemIcon-root': {
+    color: 'var(--sidebar-text)',
+    minWidth: 'auto',
+    marginRight: theme.spacing(1),
+  },
+}));
+
+const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 260 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const user = getStoredUser();
@@ -158,85 +205,88 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 280 }
   const isActive = (path: string) => location.pathname === path;
 
   const drawerContent = (
-    <SidebarRoot>
+    <SidebarRoot sx={{ width: width }}>
       {/* Logo & Brand Section */}
       <LogoWrapper>
         <Typography 
-          variant="h6" 
+          variant="h5"
           component="div" 
           sx={{ 
             fontWeight: 700, 
             display: 'flex',
             alignItems: 'center',
+            color: 'var(--sidebar-text-active)',
             '& svg': {
-              mr: 1,
-              fontSize: 24,
-              color: 'primary.main',
+              mr: 1.5,
+              fontSize: 28,
+              color: 'var(--primary-color)',
             }
           }}
         >
-          <LocalParkingIcon /> Park Easy
+          <LocalParkingIcon /> ParkShare
         </Typography>
         
-        {variant === 'temporary' && (
+        {variant !== 'permanent' && (
           <IconButton 
             onClick={onClose}
             sx={{ 
-              ml: 'auto',
-              color: 'text.secondary',
+              color: 'var(--sidebar-text)',
+              '&:hover': {
+                color: 'var(--sidebar-text-active)',
+                backgroundColor: 'var(--sidebar-hover-bg)',
+              }
             }}
             size="small"
           >
-            <ChevronLeftIcon />
+            {open ? <ChevronLeftIcon /> : <MenuIcon />}
           </IconButton>
         )}
       </LogoWrapper>
 
       {/* User Profile Section */}
-      <Box 
-        sx={{ 
-          px: 3, 
-          py: 2,
-          display: 'flex', 
-          alignItems: 'center',
-          borderBottom: 1,
-          borderColor: 'grey.100',
-        }}
-      >
+      <UserProfileWrapper>
         <Avatar 
           sx={{ 
-            width: 42, 
-            height: 42,
-            bgcolor: 'primary.light',
+            width: 40,
+            height: 40,
+            bgcolor: 'var(--primary-color)',
+            color: 'var(--sidebar-text-active)',
+            fontSize: '1rem',
+            fontWeight: 600,
           }}
         >
           {user?.firstName?.charAt(0)?.toUpperCase() || 'U'}
         </Avatar>
         
-        <Box sx={{ ml: 2, overflow: 'hidden' }}>
+        <Box sx={{ ml: 1.5, overflow: 'hidden' }}>
           <Typography 
             variant="subtitle1" 
             noWrap
             sx={{ 
               fontWeight: 600,
+              color: 'var(--sidebar-text-active)',
+              lineHeight: 1.3,
             }}
           >
-            {getFullName(user) || 'User'}
+            {getFullName(user) || 'User Name'}
           </Typography>
           <Typography 
             variant="body2" 
             noWrap
             sx={{ 
-              color: 'text.secondary', 
+              color: 'var(--sidebar-text)',
+              opacity: 0.8,
+              fontSize: '0.8rem',
             }}
           >
-            {isAdmin ? 'Administrator' : 'User'}
+            {isAdmin ? 'Administrator' : 'Member'}
           </Typography>
         </Box>
-      </Box>
+      </UserProfileWrapper>
       
       {/* Main Navigation */}
-      <CategoryLabel>Main</CategoryLabel>
+      <Box sx={{ overflowY: 'auto', flexGrow: 1 }}>
+        <CategoryLabel>Menu</CategoryLabel>
       <SidebarMenu component="nav">
         {navItems.map((item) => (
           <ListItem key={item.text} disablePadding>
@@ -258,6 +308,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 280 }
           </ListItem>
         ))}
       </SidebarMenu>
+      </Box>
       
       {/* Notifications Section */}
       <CategoryLabel>Notifications</CategoryLabel>
@@ -310,7 +361,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 280 }
                 <LogoutIcon />
               </ListItemIcon>
               <ListItemText 
-                primary="Log Out" 
+                primary="Logout" 
                 primaryTypographyProps={{ 
                   fontSize: 14,
                   fontWeight: 500,
@@ -330,6 +381,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, variant, width = 280 }
           © 2023 Parking Management System
         </Typography>
       </Box>
+
+      {/* Logout Button Section - styled like "Add files" */}
+      <LogoutButtonWrapper>
+        <StyledLogoutButton onClick={handleLogout}>
+          <ListItemIcon>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText primary="Logout" primaryTypographyProps={{ fontWeight: 500 }} />
+        </StyledLogoutButton>
+      </LogoutButtonWrapper>
     </SidebarRoot>
   );
 

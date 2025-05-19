@@ -1,5 +1,5 @@
 const { User } = require('../models');
-const { ApiError } = require('../middlewares/error');
+const { ApiError } = require('../middlewes/error');
 const { hashPassword, comparePassword, generateToken } = require('../utils/auth');
 
 /**
