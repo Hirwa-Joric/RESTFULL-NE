@@ -155,6 +155,9 @@ const schemas = {
       .default('cash')
       .optional(),
   }),
+
+  // Simple GET request schema for getUserBookings
+  getUserBookings: Joi.object({}),
 };
 
 module.exports = {

@@ -20,7 +20,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <ThemeProvider theme={theme}>
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <CssBaseline />
-          <BrowserRouter>
+          <BrowserRouter future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}>
             <App />
             <ToastContainer 
               position="top-right"

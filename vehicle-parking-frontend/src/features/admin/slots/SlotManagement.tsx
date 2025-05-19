@@ -24,6 +24,7 @@ import {
   Alert,
   Snackbar
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material';
 import { 
   Add as AddIcon, 
   Edit as EditIcon, 
@@ -36,15 +37,19 @@ import {
   ViewModule as ViewModuleIcon
 } from '@mui/icons-material';
 import api from '../../../services/api';
+import { hasRole, getStoredUser } from '../../../utils/authWrapper';
 
 // Type definitions
 interface ParkingSlot {
   id: string;
   slotNumber: string;
+  row?: string;
+  position?: number;
   locationDescription: string;
   type: 'car' | 'motorcycle' | 'van' | 'electric_car' | 'disabled';
   status: 'available' | 'occupied' | 'reserved' | 'maintenance';
   isEVChargingAvailable: boolean;
+  isSpecialSlot?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -55,7 +60,8 @@ const initialSlotState: ParkingSlot = {
   locationDescription: '',
   type: 'car',
   status: 'available',
-  isEVChargingAvailable: false
+  isEVChargingAvailable: false,
+  isSpecialSlot: false
 };
 
 const SlotManagement: React.FC = () => {
@@ -68,6 +74,7 @@ const SlotManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [bulkRowCount, setBulkRowCount] = useState(6);
   const [bulkSlotsPerRow, setBulkSlotsPerRow] = useState(10);
   const [bulkRowPrefix, setBulkRowPrefix] = useState('A');
@@ -76,12 +83,31 @@ const SlotManagement: React.FC = () => {
 
   // Load slots on component mount
   useEffect(() => {
+    // Check if user is admin
+    const user = getStoredUser();
+    if (!user || !hasRole('admin')) {
+      setError('You do not have permission to manage slots. Please log in as an admin.');
+      setSnackbarOpen(true);
+      return;
+    }
+    
     fetchSlots();
   }, []);
 
   const fetchSlots = async () => {
     try {
       setLoading(true);
+      
+      // Debug auth status
+      const token = localStorage.getItem('token');
+      const user = getStoredUser();
+      console.log('Auth status:', { 
+        hasToken: !!token, 
+        hasUser: !!user, 
+        userRole: user?.role,
+        isAdmin: hasRole('admin')
+      });
+      
       const response = await api.get('/slots');
       console.log('Slots API response:', response.data);
       
@@ -107,13 +133,58 @@ const SlotManagement: React.FC = () => {
       
       // Always ensure we have an array, even if empty
       setSlots(Array.isArray(slotsArray) ? slotsArray : []);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching slots:', err);
+      
+      // Add detailed error logging
+      if (err.response) {
+        console.error('Error response:', err.response.data);
+        console.error('Error status:', err.response.status);
+        console.error('Error headers:', err.response.headers);
+      }
+      
       setError('Failed to load parking slots');
       setSlots([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to check if a slot number already exists
+  const slotExists = (slotNumber: string): boolean => {
+    return slots.some(slot => slot.slotNumber === slotNumber);
+  };
+
+  // Helper function to validate slot number format
+  const validateSlotNumber = (slotNumber: string): string | null => {
+    if (!slotNumber) {
+      return 'Slot number is required';
+    }
+    
+    // Check that first character is a letter between A-F or V
+    const row = slotNumber.charAt(0);
+    if (!row.match(/^[A-FV]$/)) {
+      return 'Slot number must start with a letter between A and F or V';
+    }
+    
+    // Check that the rest is a number between 1-20
+    const positionStr = slotNumber.substring(1);
+    const position = parseInt(positionStr, 10);
+    
+    if (isNaN(position)) {
+      return 'Position must be a number';
+    }
+    
+    if (position < 1 || position > 20) {
+      return 'Position number must be between 1 and 20';
+    }
+    
+    // Only check for duplicates when creating, not when editing
+    if (!isEditing && slotExists(slotNumber)) {
+      return `Slot number ${slotNumber} already exists`;
+    }
+    
+    return null; // No error
   };
 
   const handleOpenAddDialog = () => {
@@ -140,7 +211,10 @@ const SlotManagement: React.FC = () => {
     setOpenBulkDialog(false);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }> | 
+    SelectChangeEvent
+  ) => {
     const { name, value } = e.target;
     if (name) {
       setCurrentSlot(prev => ({
@@ -159,21 +233,102 @@ const SlotManagement: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    // Validate slotNumber format
+    const validationResult = validateSlotNumber(currentSlot.slotNumber);
+    if (validationResult) {
+      setValidationError(validationResult);
+      return;
+    }
+    
+    // Reset validation error if we passed validation
+    setValidationError(null);
+    
     try {
+      // Extract only fields that the backend validation expects
+      const slotData = {
+        slotNumber: currentSlot.slotNumber,
+        locationDescription: currentSlot.locationDescription,
+        type: currentSlot.type,
+        isEVChargingAvailable: currentSlot.isEVChargingAvailable
+      };
+      
+      console.log('Sending slot data to API:', slotData);
+      console.log('Auth token:', localStorage.getItem('token'));
+      
       if (isEditing) {
-        await api.put(`/slots/${currentSlot.id}`, currentSlot);
-        setSuccessMsg('Parking slot updated successfully');
+        try {
+          const response = await api.put(`/slots/${currentSlot.id}`, slotData);
+          console.log('API response:', response.data);
+          setSuccessMsg('Parking slot updated successfully');
+          fetchSlots();
+          handleCloseDialog();
+          setSnackbarOpen(true);
+        } catch (updateErr: any) {
+          console.error('PUT Error details:', {
+            status: updateErr.response?.status,
+            statusText: updateErr.response?.statusText,
+            data: updateErr.response?.data
+          });
+          
+          let errorMessage = 'Failed to update parking slot';
+          if (updateErr.response?.data?.message) {
+            errorMessage = updateErr.response.data.message;
+          }
+          
+          setError(errorMessage);
+          setSnackbarOpen(true);
+        }
       } else {
-        await api.post('/slots', currentSlot);
-        setSuccessMsg('New parking slot added successfully');
+        try {
+          const response = await api.post('/slots', slotData);
+          console.log('API response:', response.data);
+          setSuccessMsg('New parking slot added successfully');
+          fetchSlots();
+          handleCloseDialog();
+          setSnackbarOpen(true);
+        } catch (postErr: any) {
+          console.error('POST Error details:', {
+            status: postErr.response?.status,
+            statusText: postErr.response?.statusText,
+            data: postErr.response?.data,
+            headers: postErr.response?.headers
+          });
+          
+          let errorMessage = 'Failed to create parking slot';
+          
+          // Handle specific error cases
+          if (postErr.response?.data?.message?.includes('already exists')) {
+            errorMessage = `Parking slot "${currentSlot.slotNumber}" already exists`;
+          } else if (postErr.response?.data?.message) {
+            errorMessage = postErr.response.data.message;
+          }
+          
+          setError(errorMessage);
+          setSnackbarOpen(true);
+        }
+      }
+    } catch (err: any) {
+      console.error('Error in slot operation:', err);
+      
+      // Extract more detailed error info if available
+      let errorMessage = 'Failed to save parking slot';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
       }
       
-      fetchSlots();
-      handleCloseDialog();
-      setSnackbarOpen(true);
-    } catch (err: any) {
-      console.error('Error saving slot:', err);
-      setError(err.response?.data?.message || 'Failed to save parking slot');
+      console.error('Full error response:', err.response?.data);
+      
+      // Log detailed validation errors if available
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        console.error('Validation errors:', err.response.data.errors);
+        err.response.data.errors.forEach((error, index) => {
+          console.error(`Error ${index + 1}:`, error);
+        });
+      }
+      
+      setError(errorMessage);
       setSnackbarOpen(true);
     }
   };
@@ -231,43 +386,218 @@ const SlotManagement: React.FC = () => {
 
   const handleBulkCreate = async () => {
     try {
+      // Validate row prefix
+      if (!bulkRowPrefix.match(/^[A-FV]$/)) {
+        setError('Row prefix must be a letter between A and F or V');
+        setSnackbarOpen(true);
+        return;
+      }
+      
       // Generate an array of slot objects based on the bulk settings
       const newSlots: Omit<ParkingSlot, 'id' | 'createdAt' | 'updatedAt'>[] = [];
+      const existingSlotNumbers: string[] = [];
       
       for (let row = 0; row < bulkRowCount; row++) {
         // Convert row number to letter (A, B, C, etc.)
-        const rowLetter = String.fromCharCode(bulkRowPrefix.charCodeAt(0) + row);
+        let rowLetter = String.fromCharCode(bulkRowPrefix.charCodeAt(0) + row);
+        
+        // Special case for row V (which is outside the A-F sequence)
+        if (bulkRowPrefix === 'V') {
+          rowLetter = 'V';
+          // Only create one row for V
+          if (row > 0) break;
+        } else {
+          // Make sure we're not generating rows beyond F for regular sequence
+          if (rowLetter.charCodeAt(0) > 'F'.charCodeAt(0)) {
+            break;
+          }
+        }
         
         for (let slot = 1; slot <= bulkSlotsPerRow; slot++) {
+          // Make sure slot number stays under 20
+          if (slot > 20) {
+            break;
+          }
+          
           const slotNumber = `${rowLetter}${slot.toString().padStart(2, '0')}`;
+          
+          // Validate slot number
+          const validationResult = validateSlotNumber(slotNumber);
+          if (validationResult) {
+            // Special case for "already exists" - track these separately
+            if (validationResult.includes('already exists')) {
+              console.warn(`Skipping existing slot: ${slotNumber}`);
+              existingSlotNumbers.push(slotNumber);
+              continue;
+            }
+            
+            console.warn(`Skipping invalid slot number: ${slotNumber} - ${validationResult}`);
+            continue;
+          }
           
           newSlots.push({
             slotNumber,
             locationDescription: `Row ${rowLetter}`,
             type: bulkSlotType,
             status: 'available',
-            isEVChargingAvailable: row === (bulkRowCount - 1) && bulkEvRow // Last row as EV if enabled
+            isEVChargingAvailable: row === (bulkRowCount - 1) && bulkEvRow
           });
         }
       }
       
-      // Create all slots in sequence
+      // Warn if all slots already exist
+      if (newSlots.length === 0) {
+        if (existingSlotNumbers.length > 0) {
+          setError(`All slots in this range already exist. (${existingSlotNumbers.length} existing slots detected)`);
+        } else {
+          setError('No valid slots to create. Please check your configuration.');
+        }
+        setSnackbarOpen(true);
+        return;
+      }
+      
+      // If some slots already exist, ask for confirmation
+      if (existingSlotNumbers.length > 0) {
+        const confirmMessage = `${existingSlotNumbers.length} slots already exist and will be skipped. Continue with creating the remaining ${newSlots.length} slots?`;
+        
+        if (!window.confirm(confirmMessage)) {
+          return; // User cancelled
+        }
+      }
+      
+      // Create all slots in sequence, but don't stop if one fails
       let createdCount = 0;
+      let otherErrorsCount = 0;
+      const results = [];
+      
       for (const slot of newSlots) {
-        await api.post('/slots', slot);
-        createdCount++;
+        console.log('Creating slot:', slot);
+        try {
+          // Extract only the fields that the backend validation expects
+          const slotData = {
+            slotNumber: slot.slotNumber,
+            locationDescription: slot.locationDescription,
+            type: slot.type,
+            isEVChargingAvailable: slot.isEVChargingAvailable
+          };
+          
+          await api.post('/slots', slotData);
+          createdCount++;
+          results.push({ slotNumber: slot.slotNumber, status: 'success' });
+        } catch (slotErr: any) {
+          console.error(`Error creating slot ${slot.slotNumber}:`, slotErr);
+          console.error('Error response:', slotErr.response?.data);
+          
+          // Check if this is a "slot already exists" error
+          if (slotErr.response?.data?.message?.includes('already exists')) {
+            otherErrorsCount++;
+            results.push({ 
+              slotNumber: slot.slotNumber, 
+              status: 'error',
+              message: slotErr.response?.data?.message || 'Unknown error'
+            });
+          } else {
+            otherErrorsCount++;
+            results.push({ 
+              slotNumber: slot.slotNumber, 
+              status: 'error',
+              message: slotErr.response?.data?.message || 'Unknown error'
+            });
+          }
+          // Continue with the next slot instead of throwing
+        }
       }
       
       fetchSlots();
       setOpenBulkDialog(false);
-      setSuccessMsg(`Successfully created ${createdCount} parking slots`);
+      
+      // Create a detailed message about the results
+      let resultMessage = '';
+      if (createdCount > 0) {
+        resultMessage += `${createdCount} slots created successfully. `;
+      }
+      if (otherErrorsCount > 0) {
+        resultMessage += `${otherErrorsCount} slots failed to create due to errors.`;
+      }
+      
+      setSuccessMsg(resultMessage);
       setSnackbarOpen(true);
     } catch (err: any) {
-      console.error('Error creating bulk slots:', err);
-      setError(err.response?.data?.message || 'Failed to create bulk parking slots');
+      console.error('Error in bulk slot creation:', err);
+      
+      // Extract more detailed error info if available
+      let errorMessage = 'Failed to create bulk parking slots';
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      }
+      
+      console.error('Full error response:', err.response?.data);
+      
+      // Log detailed validation errors if available
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        console.error('Validation errors:', err.response.data.errors);
+        err.response.data.errors.forEach((error, index) => {
+          console.error(`Error ${index + 1}:`, error);
+        });
+      }
+      
+      setError(errorMessage);
       setSnackbarOpen(true);
     }
   };
+
+  // Test direct API call without axios
+  const testDirectApiCall = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Format test data - only include fields that the backend validation expects
+      const testSlot = {
+        slotNumber: 'A01',
+        locationDescription: 'Test slot',
+        type: 'car',
+        isEVChargingAvailable: false
+      };
+      
+      console.log('Making direct fetch call with data:', testSlot);
+      
+      const response = await fetch('http://localhost:5000/api/slots', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(testSlot)
+      });
+      
+      const data = await response.json();
+      
+      console.log('Direct fetch response:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: data
+      });
+      
+      if (!response.ok) {
+        console.error('Direct fetch error:', data);
+        if (data.errors && Array.isArray(data.errors)) {
+          console.error('Validation errors:', data.errors);
+          data.errors.forEach((error, index) => {
+            console.error(`Error ${index + 1}:`, error);
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Direct fetch error:', err);
+    }
+  };
+  
+  // Call the test function once on mount
+  useEffect(() => {
+    testDirectApiCall();
+  }, []);
 
   return (
     <Box>
@@ -363,6 +693,9 @@ const SlotManagement: React.FC = () => {
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{isEditing ? 'Edit Parking Slot' : 'Add New Parking Slot'}</DialogTitle>
         <DialogContent>
+          {validationError && (
+            <Alert severity="error" sx={{ mt: 2 }}>{validationError}</Alert>
+          )}
           <Box component="form" sx={{ mt: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
@@ -375,7 +708,9 @@ const SlotManagement: React.FC = () => {
                   required
                   variant="outlined"
                   margin="normal"
-                  placeholder="A101"
+                  placeholder="A01"
+                  helperText="Format: Letter (A-F or V) followed by number (1-20)"
+                  error={!!validationError && validationError.includes('Slot number')}
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
@@ -490,7 +825,7 @@ const SlotManagement: React.FC = () => {
                   margin="normal"
                   placeholder="A"
                   inputProps={{ maxLength: 1, style: { textTransform: 'uppercase' } }}
-                  helperText="Starting letter for row names (A, B, C, etc.)"
+                  helperText="Starting letter for row names (A-F or V)"
                 />
               </Grid>
               <Grid item xs={12} sm={6}>

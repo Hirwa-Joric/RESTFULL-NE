@@ -21,6 +21,7 @@ import {
   IconButton,
   Divider,
   styled,
+  useTheme,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -57,24 +58,27 @@ const DashboardTitle = styled(Typography)(({ theme }) => ({
   fontSize: '1.75rem', // Larger title
 }));
 
-const StatCard = styled(Card)<{ cardColor?: string; textColor?: string }>(({ theme, cardColor, textColor }) => ({
+// Prevent custom props from being passed to the DOM
+const StatCard = styled(Card, {
+  shouldForwardProp: (prop) => prop !== 'cardColor' && prop !== 'textColor'
+})<{ cardColor?: string; textColor?: string }>(({ theme, cardColor, textColor }) => ({
   height: '100%',
   borderRadius: '12px',
   boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.08)',
   border: 'none',
   padding: theme.spacing(2.5),
-  backgroundColor: cardColor || 'var(--card-bg)',
-  color: textColor || 'var(--text-primary)',
+  backgroundColor: cardColor || '#ffffff',
+  color: textColor || '#333333',
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  ...(cardColor && cardColor !== 'var(--card-bg)' && {
-    color: 'var(--text-on-dark-bg)',
+  ...(cardColor && cardColor !== '#ffffff' && {
+    color: '#ffffff',
     '& .MuiTypography-root': {
-      color: 'var(--text-on-dark-bg)',
+      color: '#ffffff',
     },
     '& .MuiSvgIcon-root': {
-      color: 'var(--text-on-dark-bg)',
+      color: '#ffffff',
     }
   })
 }));
@@ -87,16 +91,21 @@ const SectionTitle = styled(Typography)(({ theme }) => ({
   fontSize: '1.25rem',
 }));
 
-const IconAvatar = styled(Avatar)<{ avatarColor?: string; iconColor?: string }>(({ theme, avatarColor, iconColor }) => ({
+// Prevent custom props from being passed to the DOM
+const IconAvatar = styled(Avatar, {
+  shouldForwardProp: (prop) => prop !== 'avatarColor' && prop !== 'iconColor'
+})<{ avatarColor?: string; iconColor?: string }>(({ theme, avatarColor, iconColor }) => ({
   backgroundColor: avatarColor || alpha(theme.palette.primary.main, 0.1),
   color: iconColor || theme.palette.primary.main,
   width: 48,
   height: 48,
 }));
 
-const StyledTrendBadge = styled(Box)<{ trend: 'up' | 'down' }>(({ theme, trend }) => {
-  const successColor = 'var(--primary-color)'; // Using primary for "up"
-  const errorColor = 'var(--accent-color-red)';
+const StyledTrendBadge = styled(Box, {
+  shouldForwardProp: (prop) => prop !== 'trend'
+})<{ trend: 'up' | 'down' }>(({ theme, trend }) => {
+  const successColor = '#4caf50'; // Using green for "up"
+  const errorColor = '#f44336'; // Using red for "down"
   const color = trend === 'up' ? successColor : errorColor;
   return {
     color: color,
@@ -110,18 +119,20 @@ const StyledTrendBadge = styled(Box)<{ trend: 'up' | 'down' }>(({ theme, trend }
   };
 });
 
-const StyledStatusChip = styled(Chip)(({ theme, status }: { theme: any; status: string }) => {
-  let chipColor = 'var(--text-secondary)';
+const StyledStatusChip = styled(Chip, {
+  shouldForwardProp: (prop) => prop !== 'status'
+})(({ theme, status }: { theme: any; status: string }) => {
+  let chipColor = '#757575';  // Default gray
   let chipBgColor = alpha(chipColor, 0.1);
 
   if (status === 'approved' || status === 'active') {
-    chipColor = 'var(--primary-color)';
+    chipColor = '#4caf50';  // Green
     chipBgColor = alpha(chipColor, 0.15);
   } else if (status === 'pending') {
-    chipColor = 'var(--toastify-color-warning)';
+    chipColor = '#ff9800';  // Orange
     chipBgColor = alpha(chipColor, 0.15);
   } else if (status === 'expired' || status === 'cancelled' || status === 'rejected') {
-    chipColor = 'var(--accent-color-red)';
+    chipColor = '#f44336';  // Red
     chipBgColor = alpha(chipColor, 0.15);
   }
   return {
@@ -136,6 +147,7 @@ const StyledStatusChip = styled(Chip)(({ theme, status }: { theme: any; status: 
 
 const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const theme = useTheme(); // Add this hook to use theme
   const [tabValue, setTabValue] = useState(0);
 
   // State for dashboard metrics
@@ -213,9 +225,9 @@ const AdminDashboardPage: React.FC = () => {
       <Grid container spacing={3}>
         {/* Stat Card 1: Total Bookings - Green Background */}
         <Grid item xs={12} sm={6} md={3}>
-          <StatCard cardColor="var(--primary-color)">
+          <StatCard cardColor="#4caf50">
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <IconAvatar avatarColor={alpha("var(--text-on-dark-bg)", 0.2)} iconColor="var(--text-on-dark-bg)">
+              <IconAvatar avatarColor={alpha("#ffffff", 0.2)} iconColor="#ffffff">
                 <BookingsIcon />
               </IconAvatar>
               <StyledTrendBadge trend="up">
@@ -236,9 +248,9 @@ const AdminDashboardPage: React.FC = () => {
 
         {/* Stat Card 2: Today's Bookings - Blue Background */}
         <Grid item xs={12} sm={6} md={3}>
-          <StatCard cardColor="var(--secondary-color)">
+          <StatCard cardColor="#2196f3">
              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <IconAvatar avatarColor={alpha("var(--text-on-dark-bg)", 0.2)} iconColor="var(--text-on-dark-bg)">
+              <IconAvatar avatarColor={alpha("#ffffff", 0.2)} iconColor="#ffffff">
                 <CalendarIcon />
               </IconAvatar>
               <StyledTrendBadge trend="down">
@@ -261,7 +273,7 @@ const AdminDashboardPage: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <IconAvatar avatarColor={alpha("var(--primary-color)", 0.15)} iconColor="var(--primary-color)">
+              <IconAvatar avatarColor={alpha("#4caf50", 0.15)} iconColor="#4caf50">
                 <LocalParkingIcon />
               </IconAvatar>
               {/* Optional: Add a MoreVertIcon if actions are needed */}
@@ -270,7 +282,7 @@ const AdminDashboardPage: React.FC = () => {
               <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5 }}>
                 {loading ? <CircularProgress size={28} color="inherit"/> : availableSlots}
               </Typography>
-              <Typography variant="body2" color="var(--text-secondary)">
+              <Typography variant="body2" color="#757575">
                 Available Slots
               </Typography>
             </Box>
@@ -281,7 +293,7 @@ const AdminDashboardPage: React.FC = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <IconAvatar avatarColor={alpha("var(--toastify-color-warning)", 0.15)} iconColor="var(--toastify-color-warning)">
+              <IconAvatar avatarColor={alpha("#ff9800", 0.15)} iconColor="#ff9800">
                 <PeopleIcon />
               </IconAvatar>
                {/* Optional: Add a MoreVertIcon if actions are needed */}
@@ -290,7 +302,7 @@ const AdminDashboardPage: React.FC = () => {
               <Typography variant="h4" sx={{ fontWeight: 700, my: 0.5 }}>
                 {loading ? <CircularProgress size={28} color="inherit"/> : pendingUserApprovals}
               </Typography>
-              <Typography variant="body2" color="var(--text-secondary)">
+              <Typography variant="body2" color="#757575">
                 Pending Users
               </Typography>
             </Box>
@@ -304,12 +316,12 @@ const AdminDashboardPage: React.FC = () => {
         <Grid item xs={12} md={7} lg={8}>
           <StatCard sx={{ p: 0, overflow: 'hidden', transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}> {/* Added subtle hover effect */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2.5, pb: 1 }}>
-              <Typography variant="h6" fontWeight={600} color="var(--text-primary)">
+              <Typography variant="h6" fontWeight={600} color="#212529">
                 Parking Activity Trends
               </Typography>
               {/* Optional: Add view controls or date range pickers here */}
             </Box>
-            <Divider sx={{ borderColor: 'var(--border-color)'}} />
+            <Divider sx={{ borderColor: '#eeeeee'}} />
             <Box sx={{ p: 2.5, pt: 2 }}>
               <DashboardChartComponent chartType="area" />
             </Box>
@@ -319,7 +331,7 @@ const AdminDashboardPage: React.FC = () => {
         {/* Parking Utilization Donut Chart Card */}
         <Grid item xs={12} md={5} lg={4}>
           <StatCard sx={{ transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}> {/* Added subtle hover effect */}
-            <Typography variant="h6" fontWeight={600} color="var(--text-primary)" sx={{ mb: 2 }}>
+            <Typography variant="h6" fontWeight={600} color="#212529" sx={{ mb: 2 }}>
               Current Slot Occupancy
             </Typography>
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', minHeight: 180 }}>
@@ -328,14 +340,14 @@ const AdminDashboardPage: React.FC = () => {
                 value={100}
                 size={170}
                 thickness={4}
-                sx={{ color: 'var(--border-color)', position: 'absolute' }}
+                sx={{ color: '#e0e0e0', position: 'absolute' }}
               />
               <CircularProgress
                 variant="determinate"
                 value={parkingUtilization}
                 size={170}
                 thickness={4}
-                sx={{ color: 'var(--primary-color)', position: 'absolute' }}
+                sx={{ color: '#4caf50', position: 'absolute' }}
               />
               <Box
                 sx={{
@@ -346,31 +358,31 @@ const AdminDashboardPage: React.FC = () => {
                   textAlign: 'center',
                 }}
               >
-                <Typography variant="h3" fontWeight={700} color="var(--text-primary)">
+                <Typography variant="h3" fontWeight={700} color="#212529">
                   {parkingUtilization}%
                 </Typography>
-                <Typography variant="body2" color="var(--text-secondary)">
+                <Typography variant="body2" color="#757575">
                   Utilized
                 </Typography>
               </Box>
             </Box>
             <Grid container spacing={2} sx={{ mt: 2.5 }}>
               <Grid item xs={6}>
-                <Box sx={{ p: 1.5, bgcolor: alpha('var(--primary-color)', 0.1), borderRadius: '8px', textAlign: 'center' }}>
-                  <Typography variant="body2" color="var(--text-secondary)" gutterBottom>
+                <Box sx={{ p: 1.5, bgcolor: alpha('#4caf50', 0.1), borderRadius: '8px', textAlign: 'center' }}>
+                  <Typography variant="body2" color="#757575" gutterBottom>
                     Available
                   </Typography>
-                  <Typography variant="h5" color="var(--primary-color)" fontWeight={600}>
+                  <Typography variant="h5" color="#4caf50" fontWeight={600}>
                     {loading ? <CircularProgress size={20}/> : availableSlots}
                   </Typography>
                 </Box>
               </Grid>
               <Grid item xs={6}>
-                <Box sx={{ p: 1.5, bgcolor: alpha('var(--accent-color-red)', 0.1), borderRadius: '8px', textAlign: 'center' }}>
-                  <Typography variant="body2" color="var(--text-secondary)" gutterBottom>
+                <Box sx={{ p: 1.5, bgcolor: alpha('#f44336', 0.1), borderRadius: '8px', textAlign: 'center' }}>
+                  <Typography variant="body2" color="#757575" gutterBottom>
                     Occupied
                   </Typography>
-                  <Typography variant="h5" color="var(--accent-color-red)" fontWeight={600}>
+                  <Typography variant="h5" color="#f44336" fontWeight={600}>
                      {loading ? <CircularProgress size={20}/> : occupiedSlots}
                   </Typography>
                 </Box>
@@ -385,19 +397,19 @@ const AdminDashboardPage: React.FC = () => {
         <Grid item xs={12}>
           <StatCard sx={{ p: 0, transition: 'transform 0.2s', '&:hover': { transform: 'translateY(-4px)' } }}> {/* Added subtle hover effect */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2.5, pb: 1 }}>
-              <Typography variant="h6" fontWeight={600} color="var(--text-primary)">
+              <Typography variant="h6" fontWeight={600} color="#212529">
                 Recent Bookings
               </Typography>
               <Button 
                 size="small" 
                 variant="text" 
                 onClick={() => navigate('/admin/bookings')}
-                sx={{ color: 'var(--primary-color)', '&:hover': { backgroundColor: alpha('var(--primary-color)', 0.05) } }}
+                sx={{ color: '#4caf50', '&:hover': { backgroundColor: alpha('#4caf50', 0.05) } }}
               >
                 View All
               </Button>
             </Box>
-            <Divider sx={{ borderColor: 'var(--border-color)' }} />
+            <Divider sx={{ borderColor: '#eeeeee' }} />
             <Box>
               {loading ? (
                  <Box sx={{ p: 3, textAlign: 'center' }}><CircularProgress /></Box>
@@ -408,41 +420,42 @@ const AdminDashboardPage: React.FC = () => {
                     sx={{ 
                       p: 2, 
                       borderBottom: index === recentRequests.length - 1 ? 0 : 1, 
-                      borderColor: 'var(--border-color)', 
+                      borderColor: '#eeeeee', 
                       display: 'flex',
                       alignItems: 'center',
                       '&:hover': {
-                        backgroundColor: alpha(theme.palette.action.hover, 0.3) // Using theme.palette for generic hover
+                        backgroundColor: alpha('#f5f5f5', 0.3) // Replace theme.palette.action.hover with a direct hex value
                       }
                     }}
                   >
                     <IconAvatar 
-                        avatarColor={alpha(request.status === 'approved' || request.status === 'active' ? 'var(--primary-color)' : request.status === 'pending' ? 'var(--toastify-color-warning)' : 'var(--accent-color-red)', 0.15)} 
-                        iconColor={request.status === 'approved' || request.status === 'active' ? 'var(--primary-color)' : request.status === 'pending' ? 'var(--toastify-color-warning)' : 'var(--accent-color-red)'}
+                        avatarColor={alpha(request.status === 'approved' || request.status === 'active' ? '#4caf50' : request.status === 'pending' ? '#ff9800' : '#f44336', 0.15)} 
+                        iconColor={request.status === 'approved' || request.status === 'active' ? '#4caf50' : request.status === 'pending' ? '#ff9800' : '#f44336'}
                         sx={{ mr: 2 }}
                     >
                       <VehicleIcon />
                     </IconAvatar>
                     <Box sx={{ flexGrow: 1, mr: 1 }}>
-                      <Typography variant="subtitle2" fontWeight={600} color="var(--text-primary)">
+                      <Typography variant="subtitle2" fontWeight={600} color="#212529">
                         {request.user}
                       </Typography>
-                      <Typography variant="body2" color="var(--text-secondary)" sx={{ display: 'block' }}>
+                      <Typography variant="body2" color="#757575" sx={{ display: 'block' }}>
                         {request.vehicle}
                       </Typography>
-                      <Typography variant="caption" color="var(--text-secondary)">
+                      <Typography variant="caption" color="#757575">
                         {request.date}, {request.time}
                       </Typography>
                     </Box>
                     <StyledStatusChip 
                       label={request.status.charAt(0).toUpperCase() + request.status.slice(1)} 
                       status={request.status}
+                      theme={theme}
                     />
                   </Box>
                 ))
               ) : (
                 <Box sx={{ p: 3, textAlign: 'center' }}>
-                  <Typography variant="body2" color="var(--text-secondary)">
+                  <Typography variant="body2" color="#757575">
                     No recent booking requests.
                   </Typography>
                 </Box>

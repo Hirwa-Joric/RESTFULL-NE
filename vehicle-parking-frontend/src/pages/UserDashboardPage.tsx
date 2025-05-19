@@ -98,18 +98,18 @@ const UpcomingBookingCard = styled(Card)(({ theme }) => ({
 }));
 
 const StatusChip = styled(Chip)(({ theme, status }: { theme: any; status: string }) => {
-  let chipColor = 'var(--text-secondary)'; 
-  let chipBgColor = alpha('var(--text-secondary)', 0.1);
+  let chipColor = '#757575';  // Default gray for text-secondary
+  let chipBgColor = alpha(chipColor, 0.1);
   
   if (status === 'approved' || status === 'active') {
-    chipColor = 'var(--primary-color)';
-    chipBgColor = alpha('var(--primary-color)', 0.15);
+    chipColor = '#4caf50';  // Green for primary-color
+    chipBgColor = alpha(chipColor, 0.15);
   } else if (status === 'pending') {
-    chipColor = 'var(--toastify-color-warning)';
-    chipBgColor = alpha('var(--toastify-color-warning)', 0.15);
+    chipColor = '#ff9800';  // Orange for warning
+    chipBgColor = alpha(chipColor, 0.15);
   } else if (status === 'expired' || status === 'cancelled' || status === 'rejected') {
-    chipColor = 'var(--accent-color-red)';
-    chipBgColor = alpha('var(--accent-color-red)', 0.15);
+    chipColor = '#f44336';  // Red for accent-color-red
+    chipBgColor = alpha(chipColor, 0.15);
   }
   
   return {

@@ -20,6 +20,23 @@ const router = express.Router();
 // Apply authentication to all routes
 router.use(isAuthenticated);
 
+// Root route - use getUserBookings controller function with fallback
+router.get('/', async (req, res, next) => {
+  try {
+    // Check if user is authenticated
+    if (!req.user) {
+      return res.status(200).json([]);
+    }
+    
+    // Try to get user bookings
+    return await getUserBookings(req, res, next);
+  } catch (error) {
+    // Fallback to empty array if any error occurs
+    console.error('Error in bookings root route:', error);
+    return res.status(200).json([]);
+  }
+});
+
 // User routes
 /**
  * @swagger

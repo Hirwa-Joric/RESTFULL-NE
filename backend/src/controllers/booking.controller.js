@@ -56,6 +56,7 @@ const createBookingRequest = async (req, res, next) => {
 /**
  * Get all bookings for the current user
  * @route GET /api/bookings/my-bookings
+ * @route GET /api/bookings (alternate)
  */
 const getUserBookings = async (req, res, next) => {
   try {
@@ -78,7 +79,8 @@ const getUserBookings = async (req, res, next) => {
       order: [['createdAt', 'DESC']],
     });
 
-    res.status(200).json(bookings);
+    // Return empty array if no bookings found (don't throw error)
+    res.status(200).json(bookings || []);
   } catch (error) {
     next(error);
   }
